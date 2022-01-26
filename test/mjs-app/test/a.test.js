@@ -39,4 +39,26 @@ describe('mjs server', () => {
   });
 
   it('GET /failure', () => request(app).get('/failure').expect(500));
+
+  describe('POST /schema/:id', () => {
+    it('returns 200 on valid request', async () => {
+      const response = await request(app).post('/schema/123456?middleName=old').send({ firstName: 'the', lastName: 'man' }).expect(200);
+      expect(response.body).to.eql({ valid: true });
+    });
+
+    it('returns 400 on invalid body', async () => {
+      const response = await request(app).post('/schema/123456?middleName=old').send({ lastName: 'man' }).expect(400);
+      return expect(response.body.body.errors).to.exist;
+    });
+
+    it('returns 400 on invalid query', async () => {
+      const response = await request(app).post('/schema/123456').send({ firstName: 'the', lastName: 'man' }).expect(400);
+      return expect(response.body.query.errors).to.exist;
+    });
+
+    it('returns 400 on invalid params', async () => {
+      const response = await request(app).post('/schema/123?middleName=old').send({ firstName: 'the', lastName: 'man' }).expect(400);
+      return expect(response.body.params.errors).to.exist;
+    });
+  });
 });

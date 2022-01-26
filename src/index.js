@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
+import { controllerHandler } from './controller-handler.js';
 
 const VALID_FILENAMES = [
   'all.js',
@@ -28,27 +29,6 @@ const VALID_FILENAMES = [
   'unlock.js',
   'unsubscribe.js',
 ];
-
-const controllerHandler = (router, f, c) => {
-  const method = f.split('.').slice(0, -1).join('.');
-
-  if (c.prepareRouter) {
-    c.prepareRouter(router);
-  }
-
-  if (c.handler) {
-    router[method]('/', async (req, res, next) => {
-      try {
-        const result = await c.handler(req, res, next);
-        if (result && !res.headersSent) {
-          res.send(result);
-        }
-      } catch (e) {
-        next(e);
-      }
-    });
-  }
-};
 
 export const loadDirectory = async (basePath = path.join(process.cwd(), 'src', 'controllers')) => {
   const router = new Router({ mergeParams: true });
