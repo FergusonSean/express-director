@@ -26,16 +26,19 @@ describe('mjs server', () => {
   it('GET /nested/route', async () => {
     const response = await request(app).get('/nested/route').expect(200);
     expect(response.body).to.eql({ route: true });
+    expect(response.header.nonsense).to.eql('true');
   });
 
   it('GET /nested/:param', async () => {
     const response = await request(app).get('/nested/hi').expect(200);
     expect(response.text).to.eql('hi');
+    expect(response.header.nonsense).to.eql('true');
   });
 
   it('GET /nested', async () => {
     const response = await request(app).get('/nested').expect(200);
     expect(response.text).to.eql('nested');
+    expect(response.header.nonsense).to.eql('true');
   });
 
   it('GET /failure', () => request(app).get('/failure').expect(500));

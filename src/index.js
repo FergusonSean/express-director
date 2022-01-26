@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs/promises';
 
 const VALID_FILENAMES = [
-  // 'configure.js',
+  'all.js',
   'checkout.js',
   'copy.js',
   'delete.js',
@@ -29,14 +29,24 @@ const VALID_FILENAMES = [
   'unsubscribe.js',
 ];
 
-const controllerHandler = (c) => async (req, res, next) => {
-  try {
-    const result = await c.handler(req, res, next);
-    if (result && !res.headersSent) {
-      res.send(result);
-    }
-  } catch (e) {
-    next(e);
+const controllerHandler = (router, f, c) => {
+  const method = f.split('.').slice(0, -1).join('.');
+
+  if (c.prepareRouter) {
+    c.prepareRouter(router);
+  }
+
+  if (c.handler) {
+    router[method]('/', async (req, res, next) => {
+      try {
+        const result = await c.handler(req, res, next);
+        if (result && !res.headersSent) {
+          res.send(result);
+        }
+      } catch (e) {
+        next(e);
+      }
+    });
   }
 };
 
@@ -51,19 +61,18 @@ export const loadDirectory = async (basePath = path.join(process.cwd(), 'src', '
       (a, b) => VALID_FILENAMES.indexOf(a.name) - VALID_FILENAMES.indexOf(b.name),
     );
 
+  await files.reduce(async (p, f) => {
+    await p;
+    const c = await import(path.join(basePath, f.name));
+
+    controllerHandler(router, f.name, c.default || c);
+  }, Promise.resolve());
+
   const directories = dirEntries.filter((d) => d.isDirectory()).reverse();
 
   await directories.reduce(async (p, d) => {
     await p;
     router.use(`/${d.name}`, await loadDirectory(path.join(basePath, d.name)));
-  }, Promise.resolve());
-
-  await files.reduce(async (p, f) => {
-    await p;
-    const method = f.name.split('.').slice(0, -1).join('.');
-    const c = await import(path.join(basePath, f.name));
-
-    router[method]('/', controllerHandler(c.default || c));
   }, Promise.resolve());
 
   return router;

@@ -85,6 +85,28 @@ export default {
 }
 ```
 
+Setting middleware on a path and it's children can be done using the prepareRouter key on an exported controller:
+
+```js
+// all.js
+export default {
+  prepareRouter: (r) => {
+    r.use((req, res, next) => {
+      res.append('nonsense', 'true');
+      next();
+    });
+  },
+};
+```
+
+Some caveats to this approach are that in express the order that middleware is added is very important. It is recommended that you set any middleware that you intend to use in the all.js file as it will be the first thing loaded. This way middleware applies to everything below it without weird edge cases. However if your folder contains only one file it may be easier to read with all configuration in the same file, so it is an option to configure the router from any controller.
+
+For clarification if load order is causing problems your files in a particular folder are processed in the following order:
+
+1. All .js files in the directory in lexical order
+2. All folders in reverse lexical order depth first
+
+
 ## Contributing
 
 1.  Fork it!
