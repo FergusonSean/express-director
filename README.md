@@ -1,4 +1,4 @@
-[![npm version](https://badge.fury.io/js/angular2-expandable-list.svg)](https://badge.fury.io/js/angular2-expandable-list)
+[![npm version](https://www.npmjs.com/package/express-director)](https://www.npmjs.com/package/express-director)
 
 # Express Director
 
