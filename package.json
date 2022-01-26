@@ -1,6 +1,6 @@
 {
   "name": "express-director",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A file system based router for express that eases standardizing controller handling",
   "scripts": {
     "build": "tsup-node src/index.js --format cjs --clean",
