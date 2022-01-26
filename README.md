@@ -1,4 +1,4 @@
-[![npm version](https://www.npmjs.com/package/express-director)](https://www.npmjs.com/package/express-director)
+[![npm version](https://img.shields.io/npm/v/npm.svg?style=flat)](https://www.npmjs.com/package/express-director)
 
 # Express Director
 
