@@ -16,5 +16,7 @@ module.exports = {
   rules: {
     'mocha/no-mocha-arrows': 'off',
     'import/extensions': 'off',
+    'import/prefer-default-export': 'off',
+    'no-console': ['error', { allow: ['warn', 'error'] }],
   },
 };
