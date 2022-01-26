@@ -1,6 +1,8 @@
 import Ajv from 'ajv';
 
-const ajv = new Ajv({ allErrors: true, useDefaults: true, coerceTypes: 'array' });
+const ajv = new Ajv({
+  allErrors: true, removeAdditional: 'all', useDefaults: true, coerceTypes: 'array',
+});
 
 const getValidator = (c, field) => {
   if (!c[field]) return null;
@@ -8,7 +10,11 @@ const getValidator = (c, field) => {
   return async (req, res, next) => {
     try {
       const valid = schema(req[field]);
-      if (valid) return next();
+      if (valid) {
+        req.validatedData ||= {};
+        Object.assign(req.validatedData, req[field]);
+        return next();
+      }
 
       return res.status(400).send({ [field]: { errors: schema.errors } });
     } catch (e) {

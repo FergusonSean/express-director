@@ -3,7 +3,7 @@ export default {
     type: 'object',
     required: ['id'],
     properties: {
-      id: { type: 'string', minLength: 5 },
+      id: { type: 'number', minimum: 100000 },
     },
   },
   query: {
@@ -21,5 +21,5 @@ export default {
       lastName: { type: 'string', minimum: 1 },
     },
   },
-  handler: () => ({ valid: true }),
+  handler: (req) => req.validatedData,
 };

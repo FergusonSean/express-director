@@ -43,7 +43,9 @@ describe('mjs server', () => {
   describe('POST /schema/:id', () => {
     it('returns 200 on valid request', async () => {
       const response = await request(app).post('/schema/123456?middleName=old').send({ firstName: 'the', lastName: 'man' }).expect(200);
-      expect(response.body).to.eql({ valid: true });
+      expect(response.body).to.eql({
+        id: 123456, firstName: 'the', middleName: 'old', lastName: 'man',
+      });
     });
 
     it('returns 400 on invalid body', async () => {
