@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
-import { controllerHandler } from './controller-handler.js';
+import { controllerHandler } from './controller-handler';
 
 const VALID_FILENAMES = [
   'all.js',
@@ -31,7 +31,7 @@ const VALID_FILENAMES = [
 ];
 
 export const loadDirectory = async (basePath = path.join(process.cwd(), 'src', 'controllers')) => {
-  const router = new Router({ mergeParams: true });
+  const router = Router({ mergeParams: true });
   const dirEntries = await fs.readdir(basePath, { withFileTypes: true });
 
   const files = dirEntries
@@ -43,7 +43,8 @@ export const loadDirectory = async (basePath = path.join(process.cwd(), 'src', '
 
   await files.reduce(async (p, f) => {
     await p;
-    const c = await import(path.join(basePath, f.name));
+    // eslint-disable-next-line no-eval
+    const c = await eval(`import("${path.join(basePath, f.name)}")`);
 
     controllerHandler(router, f.name, c.default || c);
   }, Promise.resolve());
