@@ -1,36 +1,11 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
-import { Controller, controllerHandler } from './controller-handler';
+import {HandlerMethod, Controller, controllerHandler } from './controller-handler';
 
 export { Controller } from './controller-handler';
 
-const VALID_FILENAMES = [
-  'all.js',
-  'checkout.js',
-  'copy.js',
-  'delete.js',
-  'get.js',
-  'head.js',
-  'lock.js',
-  'm-search.js',
-  'merge.js',
-  'mkactivity.js',
-  'mkcol.js',
-  'move.js',
-  'notify.js',
-  'options.js',
-  'patch.js',
-  'post.js',
-  'purge.js',
-  'put.js',
-  'report.js',
-  'search.js',
-  'subscribe.js',
-  'trace.js',
-  'unlock.js',
-  'unsubscribe.js',
-];
+const VALID_FILENAMES = HandlerMethod.map((m) => `${m}.js`)
 
 export const loadDirectory = async (basePath = path.join(process.cwd(), 'src', 'controllers')) => {
   const router = Router({ mergeParams: true });

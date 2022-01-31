@@ -10,31 +10,32 @@ export interface Controller {
   prepareRouter?: (router: Router) => void
 }
 
-type HandlerMethod = 
-  'all' |
-  'checkout' |
-  'copy' |
-  'delete' |
-  'get' |
-  'head' |
-  'lock' |
-  'm-search' |
-  'merge' |
-  'mkactivity' |
-  'mkcol' |
-  'move' |
-  'notify' |
-  'options' |
-  'patch' |
-  'post' |
-  'purge' |
-  'put' |
-  'report' |
-  'search' |
-  'subscribe' |
-  'trace' |
-  'unlock' |
+export const HandlerMethod = [
+  'all',
+  'checkout',
+  'copy',
+  'delete',
+  'get',
+  'head',
+  'lock',
+  'm-search',
+  'merge',
+  'mkactivity',
+  'mkcol',
+  'move',
+  'notify',
+  'options',
+  'patch',
+  'post',
+  'purge',
+  'put',
+  'report',
+  'search',
+  'subscribe',
+  'trace',
+  'unlock',
   'unsubscribe'
+] as const;
 
 declare global {
   // eslint-disable-next-line
@@ -51,7 +52,7 @@ const ajv = new Ajv({
 });
 
 const getValidator = (c: Controller, field: 'query'| 'body' | 'params') => {
-  const schema = ajv.compile(c[field] as JSONSchemaType<any>);
+  const schema = ajv.compile(c[field]!);
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const valid = schema(req[field]);
@@ -70,13 +71,13 @@ const getValidator = (c: Controller, field: 'query'| 'body' | 'params') => {
 };
 
 export const controllerHandler = (router: Router, f: string, c: Controller) => {
-  const method = f.split('.').slice(0, -1).join('.') as HandlerMethod;
+  const method: typeof HandlerMethod[keyof typeof HandlerMethod] = HandlerMethod.find(e => e === (f.split('.').slice(0, -1).join('.')))!;
 
   if (c.prepareRouter) {
     c.prepareRouter(router);
   }
 
-  const handlers = ['query', 'body', 'params'].filter((v) => !!c[v as 'query' | 'body' | 'params']).map((field) => getValidator(c, field as 'query' | 'body' | 'params'))
+  const handlers = (['query', 'body', 'params'] as const).filter((v) => !!c[v]).map((field) => getValidator(c, field))
 
   if (c.handler) {
     handlers.push(
