@@ -5,7 +5,9 @@ import {HandlerMethod, Controller, controllerHandler } from './controller-handle
 
 export { Controller } from './controller-handler';
 
-const VALID_FILENAMES = HandlerMethod.map((m) => `${m}.js`)
+const ALLOWED_EXTENSIONS = ['js', 'mjs', 'cjs'];
+
+const VALID_FILENAMES = HandlerMethod.flatMap((m) => ALLOWED_EXTENSIONS.map(e => `${m}.${e}`))
 
 export const loadDirectory = async (basePath = path.join(process.cwd(), 'src', 'controllers')) => {
   const router = Router({ mergeParams: true });
