@@ -19,7 +19,7 @@ v16.10.0
 
 ## Table of contents
 
-- [Express Director](#express-director)
+  - [Express Director](#express-director)
   - [Prerequisites](#prerequisites)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
@@ -71,6 +71,9 @@ To add a route to your application simply add a file with the matching http verb
 src/controllers/widget/post.js
 ```
 
+
+#### handler
+
 A controller should export a handler function like so:
 
 ```js
@@ -84,6 +87,29 @@ export default {
   }
 }
 ```
+
+#### schemas
+
+In order to validate your input params you can use the schemas key to apply a JSON schema to the body, params, or query object. The server will return a 400 error with the ajv errors object if the request does not match any of your schemas.
+
+It's worth noting that if you aren't using some form of body parser the body schema might have unpredictable effects as validation is applied to the field on the express request object and not the base data.
+
+```js
+export default {
+  schemas: {
+    body: ajvSchemaForBody,
+    params: ajvSchemaForParams,
+    query: ajvSchemaForQuery,
+  },
+  // handler etc goes here
+}
+```
+
+Using a schema will strip any extra fields from the relevant key on the request object and so you should make sure to add complete schemas for your controllers
+
+If you do specify schemas then the request.validatedData object will be available with an object containing the merged content of your schema fields.
+
+#### prepareRouter
 
 Setting middleware on a path and it's children can be done using the prepareRouter key on an exported controller:
 
@@ -105,6 +131,8 @@ For clarification if load order is causing problems your files in a particular f
 
 1. All .js files in the directory in lexical order
 2. All folders in reverse lexical order depth first
+
+
 
 
 ## Contributing

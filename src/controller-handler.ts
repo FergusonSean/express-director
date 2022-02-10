@@ -3,9 +3,11 @@ import { Router, Request, Response, NextFunction, Send } from 'express';
 
 
 export interface Controller {
-  query?: JSONSchemaType<any>,
-  body?: JSONSchemaType<any>,
-  params?: JSONSchemaType<any>,
+  schemas?: {
+    query?: JSONSchemaType<any>,
+    body?: JSONSchemaType<any>,
+    params?: JSONSchemaType<any>,
+  },
   handler?: (req: Request, res: Response, next: NextFunction) => (Promise<Send> | void)
   prepareRouter?: (router: Router) => void
 }
@@ -52,7 +54,7 @@ const ajv = new Ajv({
 });
 
 const getValidator = (c: Controller, field: 'query'| 'body' | 'params') => {
-  const schema = ajv.compile(c[field]!);
+  const schema = ajv.compile(c.schemas![field]!);
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const valid = schema(req[field]);
@@ -77,7 +79,7 @@ export const controllerHandler = (router: Router, f: string, c: Controller) => {
     c.prepareRouter(router);
   }
 
-  const handlers = (['query', 'body', 'params'] as const).filter((v) => !!c[v]).map((field) => getValidator(c, field))
+  const handlers = c.schemas ? Object.keys(c.schemas).map((field) => getValidator(c, (field as keyof typeof c.schemas))) : []
 
   if (c.handler) {
     handlers.push(
