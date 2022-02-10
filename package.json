@@ -5,12 +5,12 @@
   "scripts": {
     "build": "tsup-node src/index.ts --format cjs,esm --dts --clean",
     "lint": "eslint 'src/**/*.[tj]s' 'test/**/*.[tj]s'",
-    "lint:fix": "eslint --fix . 'src/**/*.js' 'test/**/*.js'",
+    "lint:fix": "eslint --fix . 'src/**/*.[tj]s' 'test/**/*.[tj]s'",
     "watch": "npm run build -- --watch src",
     "prepublishOnly": "npm run build",
     "test:cjs": "npm --prefix test/cjs-app install && npm --prefix test/cjs-app run test",
     "test:mjs": "npm --prefix test/mjs-app install && npm --prefix test/mjs-app run test",
-    "test": "npm run build && npm run test:mjs && npm run test:cjs"
+    "test": "npm run lint && npm run build && npm run test:mjs && npm run test:cjs"
   },
   "type": "module",
   "main": "./dist/index.cjs",
