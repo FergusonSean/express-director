@@ -63,7 +63,7 @@ const startApp = async () => {
 startApp().then(app => app.listen(3000))
 ```
 
-### Defining Contollers
+### Defining Controllers
 
 To add a route to your application simply add a file with the matching http verb as the name at the path you would like it to be served. So if you wanted to support a POST request to localhost:3000/widget you would create:
 
@@ -132,6 +132,70 @@ For clarification if load order is causing problems your files in a particular f
 1. All .js files in the directory in lexical order
 2. All folders in reverse lexical order depth first
 
+
+### Typescript types
+
+In order to facilitate good typing in projects using this package the Controller type is exported so that a file can opt in to typechecking in the following way. This will verify all controller keys being set correctly.
+
+```js
+import { Controller } from 'express-director';
+
+const controller: Controller = {
+  handler: () => ({ hi: 5 }),
+};
+
+export default controller;
+```
+
+If your endpoint is using schemas then you can pass the appropriate types for your schemas so that ajv typechecking is enabled for your schemas and the validatedData field is detected as the correct type.
+
+```js
+import { Controller } from 'express-director';
+
+type Params = {
+  id: number;
+}
+
+type Body = {
+  firstName: string;
+  lastName: string;
+}
+
+type Query = {
+  middleName: string;
+}
+
+const controller: Controller<Query,Body,Params> = {
+  schemas: {
+    params:  {
+      type: 'object',
+      properties: {
+        id: { type: 'number', minimum: 100000 },
+      },
+      required: ['id'] as const,
+    },
+    query: {
+      type: 'object',
+      properties: {
+        middleName: { type: 'string', minimum: 1 },
+      },
+      required: ['middleName'],
+    },
+    body: {
+      type: 'object',
+      required: ['firstName', 'lastName'],
+      properties: {
+        firstName: { type: 'string', minimum: 1 },
+        lastName: { type: 'string', minimum: 1 },
+      },
+    },
+  },
+  // req.validatedData comes back as the merged type of your three schemas
+  handler: (req) => req.validatedData.firstName,
+};
+
+export default controller;
+```
 
 
 
