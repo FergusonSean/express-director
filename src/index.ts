@@ -23,9 +23,12 @@ export const loadDirectory = async (basePath = path.join(process.cwd(), 'src', '
   await files.reduce(async (p, f) => {
     await p;
     // eslint-disable-next-line no-eval
-    const c = await eval(`import("${path.join(basePath, f.name)}")`) as { default?: Controller};
+    let c = await eval(`import("${path.join(basePath, f.name)}")`) as { default?: Controller<any, any, any>};
 
-    controllerHandler(router, f.name, (c.default || c) as Controller);
+    while(c.default) {
+      c = c.default as { default?: Controller<any, any, any>};
+    }
+    controllerHandler(router, f.name, c as Controller<any, any, any>);
   }, Promise.resolve());
 
   const directories = dirEntries.filter((d) => d.isDirectory()).reverse();

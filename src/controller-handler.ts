@@ -1,14 +1,18 @@
 import Ajv, {JSONSchemaType} from 'ajv';
-import { Router, Request, Response, NextFunction, Send } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+
+interface EnhancedRequest<QueryType, BodyType, ParamsType> extends Request {
+  validatedData?: QueryType & BodyType & ParamsType;
+}
 
 
-export interface Controller {
+export type Controller<QueryType = null, BodyType = null, ParamsType = null> = {
   schemas?: {
-    query?: JSONSchemaType<any>,
-    body?: JSONSchemaType<any>,
-    params?: JSONSchemaType<any>,
+    query?: JSONSchemaType<QueryType>,
+    body?: JSONSchemaType<BodyType>,
+    params?: JSONSchemaType<ParamsType>,
   },
-  handler?: (req: Request, res: Response, next: NextFunction) => (Promise<Send> | void)
+  handler?: (req: EnhancedRequest<QueryType, BodyType, ParamsType>, res: Response, next: NextFunction) => any
   prepareRouter?: (router: Router) => void
 }
 
@@ -39,23 +43,13 @@ export const HandlerMethod = [
   'unsubscribe'
 ] as const;
 
-declare global {
-  // eslint-disable-next-line
-  namespace Express {
-    // eslint-disable-next-line
-    interface Request {
-      validatedData: any
-    }
-  }
-}
-
 const ajv = new Ajv({
   allErrors: true, removeAdditional: 'all', useDefaults: true, coerceTypes: 'array',
 });
 
-const getValidator = (c: Controller, field: 'query'| 'body' | 'params') => {
+const getValidator = (c: Controller<any,any,any>, field: 'query'| 'body' | 'params') => {
   const schema = ajv.compile(c.schemas![field]!);
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: EnhancedRequest<any,any,any>, res: Response, next: NextFunction) => {
     try {
       const valid = schema(req[field]);
       if (valid) {
@@ -72,7 +66,7 @@ const getValidator = (c: Controller, field: 'query'| 'body' | 'params') => {
   };
 };
 
-export const controllerHandler = (router: Router, f: string, c: Controller) => {
+export const controllerHandler = (router: Router, f: string, c: Controller<any,any,any>) => {
   const method: typeof HandlerMethod[keyof typeof HandlerMethod] = HandlerMethod.find(e => e === (f.split('.').slice(0, -1).join('.')))!;
 
   if (c.prepareRouter) {
@@ -85,6 +79,7 @@ export const controllerHandler = (router: Router, f: string, c: Controller) => {
     handlers.push(
       async (req: Request, res: Response, next: NextFunction) => {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const result = await c.handler!(req, res, next);
           if (result && !res.headersSent) {
             res.send(result);
