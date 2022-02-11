@@ -8,9 +8,11 @@
     "lint:fix": "eslint --fix . 'src/**/*.[tj]s' 'test/**/*.[tj]s'",
     "watch": "npm run build -- --watch src",
     "prepublishOnly": "npm run build",
-    "test:cjs": "npm --prefix test/cjs-app install && npm --prefix test/cjs-app run test",
-    "test:mjs": "npm --prefix test/mjs-app install && npm --prefix test/mjs-app run test",
-    "test": "npm run lint && npm run build && npm run test:mjs && npm run test:cjs"
+    "install:all": "npm i && npm --prefix test/cjs-app install && npm --prefix test/mjs-app install && npm --prefix test/ts-app install",
+    "test:cjs": "npm --prefix test/cjs-app run test",
+    "test:mjs": "npm --prefix test/mjs-app run test",
+    "test:ts": "npm --prefix test/ts-app run test",
+    "test": "npm run install:all && npm run lint && npm run build && npm run test:mjs && npm run test:cjs && npm run test:ts"
   },
   "type": "module",
   "main": "./dist/index.cjs",
@@ -26,8 +28,11 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/chai": "^4.3.0",
     "@types/express": "^4.17.13",
+    "@types/mocha": "^9.1.0",
     "@types/node": "^16.11.21",
+    "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^5.10.1",
     "@typescript-eslint/parser": "^5.10.1",
     "eslint": "^8.8.0",
