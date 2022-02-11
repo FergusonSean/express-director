@@ -2,7 +2,7 @@ import Ajv, {JSONSchemaType} from 'ajv';
 import { Router, Request, Response, NextFunction } from 'express';
 
 interface EnhancedRequest<QueryType, BodyType, ParamsType> extends Request {
-  validatedData?: QueryType & BodyType & ParamsType;
+  validatedData: (QueryType & BodyType & ParamsType) extends null ? never : QueryType & BodyType & ParamsType;
 }
 
 
@@ -77,7 +77,7 @@ export const controllerHandler = (router: Router, f: string, c: Controller<any,a
 
   if (c.handler) {
     handlers.push(
-      async (req: Request, res: Response, next: NextFunction) => {
+      async (req: EnhancedRequest<any,any,any>, res: Response, next: NextFunction) => {
         try {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const result = await c.handler!(req, res, next);
