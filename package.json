@@ -12,7 +12,7 @@
     "test:cjs": "npm --prefix test/cjs-app run test",
     "test:mjs": "npm --prefix test/mjs-app run test",
     "test:ts": "npm --prefix test/ts-app run test",
-    "test": "npm run install:all && npm run lint && npm run build && npm run test:mjs && npm run test:cjs && npm run test:ts"
+    "test": "npm run build && npm run install:all && npm run lint && npm run test:mjs && npm run test:cjs && npm run test:ts"
   },
   "type": "module",
   "main": "./dist/index.cjs",
