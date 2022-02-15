@@ -25,6 +25,11 @@ describe('ts server', () => {
     expect(response.body).to.eql({ hi: 5 });
   });
 
+  it('GET /custom-formatter', async () => {
+    const response = await request(app).get('/custom-formatter').expect(200);
+    expect(response.body).to.eql({ data: { count: 5 }});
+  });
+
   it('GET /nested/route', async () => {
     const response = await request(app).get('/nested/route').expect(200);
     expect(response.body).to.eql({ route: true });

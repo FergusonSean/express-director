@@ -5,7 +5,7 @@ const createApp = require('../src/index');
 let app;
 let server;
 
-describe('mjs server', () => {
+describe('cjs server', () => {
   before(async () => {
     app = await createApp();
     server = app.listen(0);

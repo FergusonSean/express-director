@@ -20,7 +20,7 @@ describe('mjs server', () => {
 
   it('GET /direct-return', async () => {
     const response = await request(app).get('/direct-return').expect(200);
-    expect(response.body).to.eql({ hi: 5 });
+    expect(response.body).to.eql({ body: {}, path: 'src/controllers/direct-return/get.js', data: { hi: 5 }});
   });
 
   it('GET /nested/route', async () => {
@@ -43,8 +43,15 @@ describe('mjs server', () => {
   describe('POST /schema/:id', () => {
     it('returns 200 on valid request', async () => {
       const response = await request(app).post('/schema/123456?middleName=old').send({ firstName: 'the', lastName: 'man' }).expect(200);
-      expect(response.body).to.eql({
-        id: 123456, firstName: 'the', middleName: 'old', lastName: 'man',
+      expect(response.body).to.eql({ 
+        path: 'src/controllers/schema/:id/post.js',
+        data: {
+          id: 123456, 
+          firstName: 'the', 
+          middleName: 'old', 
+          lastName: 'man',
+        }, 
+        body: { firstName: 'the', lastName: 'man' }
       });
     });
 
