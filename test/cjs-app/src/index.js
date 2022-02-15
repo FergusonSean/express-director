@@ -3,7 +3,7 @@ const { loadDirectory } = require('express-director');
 
 const createApp = async () => {
   const app = express();
-  app.use(await loadDirectory());
+  app.use(await loadDirectory({}));
   app.get('/', (_, res) => {
     res.send('hi');
   });

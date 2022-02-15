@@ -6,13 +6,14 @@ interface EnhancedRequest<QueryType, BodyType, ParamsType> extends Request {
 }
 
 
-export type Controller<QueryType = null, BodyType = null, ParamsType = null> = {
+export type Controller<QueryType = null, BodyType = null, ParamsType = null, HandlerResult = any> = {
+  formatter?: (context: { req: Request, res: Response, path: string, data: HandlerResult}) => any,
   schemas?: {
     query?: JSONSchemaType<QueryType>,
     body?: JSONSchemaType<BodyType>,
     params?: JSONSchemaType<ParamsType>,
   },
-  handler?: (req: EnhancedRequest<QueryType, BodyType, ParamsType>, res: Response, next: NextFunction) => any
+  handler?: (req: EnhancedRequest<QueryType, BodyType, ParamsType>, res: Response, next: NextFunction) => HandlerResult
   prepareRouter?: (router: Router) => void
 }
 
@@ -66,7 +67,7 @@ const getValidator = (c: Controller<any,any,any>, field: 'query'| 'body' | 'para
   };
 };
 
-export const controllerHandler = (router: Router, f: string, c: Controller<any,any,any>) => {
+export const controllerHandler = (router: Router, path: string, f: string, c: Controller<any,any,any>) => {
   const method: typeof HandlerMethod[keyof typeof HandlerMethod] = HandlerMethod.find(e => e === (f.split('.').slice(0, -1).join('.')))!;
 
   if (c.prepareRouter) {
@@ -80,9 +81,10 @@ export const controllerHandler = (router: Router, f: string, c: Controller<any,a
       async (req: EnhancedRequest<any,any,any>, res: Response, next: NextFunction) => {
         try {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          const result = await c.handler!(req, res, next);
-          if (result && !res.headersSent) {
-            res.send(result);
+          const data = await c.handler!(req, res, next);
+          if (c.formatter && !res.headersSent) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            await c.formatter({req, res, path, data});
           }
         } catch (e) {
           next(e);

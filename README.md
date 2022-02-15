@@ -53,7 +53,11 @@ In your app.js
 const startApp = async () => {
   const app = express();
   // add your favorite pre request middleware here
-  app.use(await loadDirectory());
+  app.use(await loadDirectory({
+    // these fields are optional as sane defaults are provided, but you must pass an object even if you are not overriding any of the defaults.
+    controllerPath: path.join(process.cwd(), 'src', 'controllers'),
+    defaultFormatter: ({res, data}) => res.send(data),
+  }));
   // or if you prefer to load a different folder than src/controllers
   app.use(await loadDirectory('/absolute/path/to/your/contollers/here'));
   // add your favorite error handling middleware here
@@ -81,11 +85,28 @@ export default {
   handler: (req, res, next) => {
     // do whatever you would do in a normal express handler here
     // but if you throw an exception it will be caught and forwarded to any error middleware you have defined
-    // you can also return a value here and that is the same as calling res.send with it
-    // res.send({hello: 'world'}) is the same as:
+    // you can also return a value here and it will be passed to the formatter of the controller or default formatter from the global initialization.
     return { hello: 'world'};
+    // by default the above is equivalent to:
+    // res.send({hello: 'world'});
   }
 }
+```
+
+#### formatter
+
+In order to use a custom formatter you can add the formatter jey to your controller. The formatter receives a context object that includes the result of your handler. These formatters allow you to standardize output formats by sharing formatter functions across multiple controllers. It is recommended that any custom formatters you write be placed in src/formatters, but this is not enforced by the library in any way.
+
+```js
+import { Controller } from 'express-director';
+
+const controller = {
+  handler: () => ({ hi: 5 }),
+  // note here that the path here is the relative path from the cwd of the controller file this is useful if you want to grab related resources based on the path of the controller.
+  formatter: ({req, res, path, data}) => res.send({ count: data.hi })
+};
+
+export default controller;
 ```
 
 #### schemas
@@ -197,6 +218,22 @@ const controller: Controller<Query,Body,Params> = {
 export default controller;
 ```
 
+If you are using a custom formatter it will take into account the data field being of your handler result type:
+
+```js
+import { Controller } from 'express-director';
+
+type HandlerResult = {
+  hi: number;
+}
+
+const controller: Controller<null,null,null, HandlerResult> = {
+  handler: () => ({ hi: 5 }),
+  formatter: ({res, data}) => res.send({data: { count: data.hi }})
+};
+
+export default controller;
+```
 
 
 ## Contributing
