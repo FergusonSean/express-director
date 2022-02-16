@@ -58,14 +58,24 @@ const startApp = async () => {
     controllerPath: path.join(process.cwd(), 'src', 'controllers'),
     defaultFormatter: ({res, data}) => res.send(data),
   }));
-  // or if you prefer to load a different folder than src/controllers
-  app.use(await loadDirectory('/absolute/path/to/your/contollers/here'));
   // add your favorite error handling middleware here
   return app;
 };
 
 startApp().then(app => app.listen(3000))
 ```
+
+### Configuring loadDirectory
+
+loadDirectory takes a context argument with several fields you can use to customize the behavior of express-director globally. Note that all of these are optional, but you must pass an object regardless of whether or not you intend to override anything.
+
+#### controllerPath
+
+This is the path to your controllers. Defaults to the current working directory/src/controllers. If your controller root is in a different location you should make sure that this is set to the absolute path of that directory.
+
+#### defaultFormatter
+
+This is a function that handles formatting if the controller does not specify a formatter. By default just passes the result to res.send. For detailed docs check out the field under defining controllers.
 
 ### Defining Controllers
 
