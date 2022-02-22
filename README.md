@@ -56,7 +56,7 @@ const startApp = async () => {
   app.use(await loadDirectory({
     // these fields are optional as sane defaults are provided, but you must pass an object even if you are not overriding any of the defaults.
     controllerPath: path.join(process.cwd(), 'src', 'controllers'),
-    defaultFormatter: ({res, data}) => res.send(data),
+    defaultRenderer: ({res, data}) => res.send(data),
   }));
   // add your favorite error handling middleware here
   return app;
@@ -73,9 +73,80 @@ loadDirectory takes a context argument with several fields you can use to custom
 
 This is the path to your controllers. Defaults to the current working directory/src/controllers. If your controller root is in a different location you should make sure that this is set to the absolute path of that directory.
 
-#### defaultFormatter
+#### defaultRenderer
 
-This is a function that handles formatting if the controller does not specify a formatter. By default just passes the result to res.send. For detailed docs check out the field under defining controllers.
+This is a function that handles rendering if the controller does not specify a renderer. By default just passes the result to res.send. For detailed docs check out the field under defining controllers.
+
+#### controllerProcessors
+
+This is an array of controller processors that produce express middlewares to handle the behavior you want out of your controllers. Note that this is very advanced usage and should rarely be needed. If you choose to override this behavior be sure to include the default processors in the list otherwise you controllers might be missing behavior described below.
+
+##### Default Processors
+
+
+###### prepareRouter
+
+This Processor handles the prepareRouter key on controllers. See below for detailed documentation.
+
+###### processSchemas
+
+This Processor handles the schemas key on controllers. See below for detailed documentation.
+
+###### processHandlerAndResponder
+
+This Processor handles the handler and renderer key on controllers. See below for detailed documentation.
+
+##### Creating custom processors
+
+Example custom processor:
+
+```js
+// in a file called mermission-processor.js
+const processor = ({path, controller}) => {
+  if (controller.permission) {
+    return [
+      async (req, res, next) => {
+        try {
+          if(req.permissions.includes(controller.permission) {
+            return next()
+          }
+
+          res.sendStatus(403)
+        } catch (e) {
+          next(e);
+        }
+      },
+    ]
+  }
+
+  return [];
+}
+
+export default processor
+
+// in your main file where express-directory is configured
+import loadDirectory, { defaultProcessors } from 'express-directory';
+const startApp = async () => {
+  const app = express();
+  app.use(middlewareThatSetsRequestPermissions)
+  app.use(await loadDirectory({
+    controllerPath: path.join(process.cwd(), 'src', 'controllers'),
+    defaultRenderer: ({res, data}) => res.send(data),
+    // note that if you do not include the default processors or include them out of order then YMMV with regards to the rest of the documentation. The only test case run as part of this project is to add new processors to the beginning of the config.
+    controllerProcessors: [permissionProcessor, ...defaultProcessors]
+  }));
+  // add your favorite error handling middleware here
+  return app;
+};
+
+startApp().then(app => app.listen(3000))
+
+
+```
+
+Adding your own custom processors allows you to extend the functionality of your controllers to support other nice opt in feature like authentication, logging, audit trail, permissions etc that the library does not yet support. Please feel free to add an issue to the repository if there is some controller key you would like to see added or a custom processor you think the community would benefit from.
+
+
 
 ### Defining Controllers
 
@@ -85,6 +156,7 @@ To add a route to your application simply add a file with the matching http verb
 src/controllers/widget/post.js
 ```
 
+It is worth noting here that the following keys and documentation relating to them only hold true if the configuration for loadDirectory includes all the default processors.
 
 #### handler
 
@@ -95,7 +167,7 @@ export default {
   handler: (req, res, next) => {
     // do whatever you would do in a normal express handler here
     // but if you throw an exception it will be caught and forwarded to any error middleware you have defined
-    // you can also return a value here and it will be passed to the formatter of the controller or default formatter from the global initialization.
+    // you can also return a value here and it will be passed to the renderer of the controller or default renderer from the global initialization.
     return { hello: 'world'};
     // by default the above is equivalent to:
     // res.send({hello: 'world'});
@@ -103,17 +175,15 @@ export default {
 }
 ```
 
-#### formatter
+#### renderer
 
-In order to use a custom formatter you can add the formatter jey to your controller. The formatter receives a context object that includes the result of your handler. These formatters allow you to standardize output formats by sharing formatter functions across multiple controllers. It is recommended that any custom formatters you write be placed in src/formatters, but this is not enforced by the library in any way.
+In order to use a custom renderer you can add the renderer key to your controller. The renderer receives a context object that includes the result of your handler. These renderer allow you to standardize output formats by sharing renderer functions across multiple controllers. It is recommended that any custom renderer you write be placed in src/renderers, but this is not enforced by the library in any way.
 
 ```js
-import { Controller } from 'express-director';
-
 const controller = {
   handler: () => ({ hi: 5 }),
   // note here that the path here is the relative path from the cwd of the controller file this is useful if you want to grab related resources based on the path of the controller.
-  formatter: ({req, res, path, data}) => res.send({ count: data.hi })
+  renderer: ({req, res, path, data}) => res.send({ count: data.hi })
 };
 
 export default controller;
@@ -166,12 +236,12 @@ For clarification if load order is causing problems your files in a particular f
 
 ### Typescript types
 
-In order to facilitate good typing in projects using this package the Controller type is exported so that a file can opt in to typechecking in the following way. This will verify all controller keys being set correctly.
+In order to facilitate good typing in projects using this package the DefaultController type is exported so that a file can opt in to typechecking in the following way. This will verify all controller keys being set correctly. Please note that if you overwrite the controllerProcessors config option you will have to build your own controller type based on the controller format expected by your list of processors. In order to simplify that process types are exported for each processor that you can combine to create a new controller type. but for most common usecases the DefaultController should suffice.
 
 ```js
-import { Controller } from 'express-director';
+import { DefaultController } from 'express-director';
 
-const controller: Controller = {
+const controller: DefaultController = {
   handler: () => ({ hi: 5 }),
 };
 
@@ -181,7 +251,7 @@ export default controller;
 If your endpoint is using schemas then you can pass the appropriate types for your schemas so that ajv typechecking is enabled for your schemas and the validatedData field is detected as the correct type.
 
 ```js
-import { Controller } from 'express-director';
+import { DefaultController } from 'express-director';
 
 type Params = {
   id: number;
@@ -196,7 +266,7 @@ type Query = {
   middleName: string;
 }
 
-const controller: Controller<Query,Body,Params> = {
+const controller: DefaultController<Query,Body,Params> = {
   schemas: {
     params:  {
       type: 'object',
@@ -228,18 +298,18 @@ const controller: Controller<Query,Body,Params> = {
 export default controller;
 ```
 
-If you are using a custom formatter it will take into account the data field being of your handler result type:
+If you are using a custom renderer it will take into account the data field being of your handler result type:
 
 ```js
-import { Controller } from 'express-director';
+import { DefaultController } from 'express-director';
 
 type HandlerResult = {
   hi: number;
 }
 
-const controller: Controller<null,null,null, HandlerResult> = {
+const controller: DefaultController<null,null,null, HandlerResult> = {
   handler: () => ({ hi: 5 }),
-  formatter: ({res, data}) => res.send({data: { count: data.hi }})
+  renderer: ({res, data}) => res.send({data: { count: data.hi }})
 };
 
 export default controller;

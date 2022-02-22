@@ -1,11 +1,11 @@
-import { Controller } from 'express-director';
+import { DefaultController } from 'express-director';
 
 type HandlerResult = {
   hi: number;
 }
-const controller: Controller<null,null,null, HandlerResult> = {
+const controller: DefaultController<null,null,null, HandlerResult> = {
   handler: () => ({ hi: 5 }),
-  formatter: ({res, data}) => res.send({data: { count: data.hi }})
+  renderer: ({res, data}) => res.send({data: { count: data.hi }})
 };
 
 export default controller;

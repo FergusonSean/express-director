@@ -1,6 +1,6 @@
-import { Controller } from 'express-director';
+import { DefaultController } from 'express-director';
 
-const controller: Controller = {
+const controller: DefaultController = {
   handler: () => { throw new Error('I suck'); },
 };
 

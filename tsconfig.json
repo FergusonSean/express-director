@@ -29,6 +29,7 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true, 
     "noUnusedLocals": true, 
+    "noErrorTruncation": true,
     "noUnusedParameters": true 
   },
   "include": ["./**/*.ts"],
