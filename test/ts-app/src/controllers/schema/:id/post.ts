@@ -1,4 +1,4 @@
-import { Controller } from 'express-director';
+import { DefaultController } from 'express-director';
 
 type Params = {
   id: number;
@@ -13,7 +13,7 @@ type Query = {
   middleName: string;
 }
 
-const controller: Controller<Query,Body,Params> = {
+const controller: DefaultController<Query,Body,Params> = {
   schemas: {
     params:  {
       type: 'object',

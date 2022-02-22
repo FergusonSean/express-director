@@ -6,7 +6,7 @@ export default async () => {
   app.use(express.json());
   app.use(await loadDirectory({ 
     controllerPath: undefined,
-    defaultFormatter: ({ path, req, res, data }) => {
+    defaultRenderer: ({ path, req, res, data }) => {
       res.send({ path, body: req.body, data });
     }
   }));

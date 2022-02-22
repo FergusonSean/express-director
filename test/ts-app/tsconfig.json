@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "module": "commonjs",
+        "noErrorTruncation": true,
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "strictNullChecks": true,
