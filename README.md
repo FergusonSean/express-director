@@ -56,7 +56,9 @@ const startApp = async () => {
   app.use(await loadDirectory({
     // these fields are optional as sane defaults are provided, but you must pass an object even if you are not overriding any of the defaults.
     controllerPath: path.join(process.cwd(), 'src', 'controllers'),
-    defaultRenderer: ({res, data}) => res.send(data),
+    defaultController: {
+      renderer: ({res, data}) => res.send(data),
+    }
   }));
   // add your favorite error handling middleware here
   return app;
@@ -73,9 +75,9 @@ loadDirectory takes a context argument with several fields you can use to custom
 
 This is the path to your controllers. Defaults to the current working directory/src/controllers. If your controller root is in a different location you should make sure that this is set to the absolute path of that directory.
 
-#### defaultRenderer
+#### defaultController
 
-This is a function that handles rendering if the controller does not specify a renderer. By default just passes the result to res.send. For detailed docs check out the field under defining controllers.
+This is an object that will be shallowly merged with your controllers to set default values across all your controllers as necessary. For details on the shape of this object check out the controllers section below. Note that the actual controller will override any conflicting values set here.
 
 #### controllerProcessors
 
@@ -126,12 +128,15 @@ export default processor
 
 // in your main file where express-directory is configured
 import loadDirectory, { defaultProcessors } from 'express-directory';
+import permissionProcessor from 'src/processors';
 const startApp = async () => {
   const app = express();
   app.use(middlewareThatSetsRequestPermissions)
   app.use(await loadDirectory({
     controllerPath: path.join(process.cwd(), 'src', 'controllers'),
-    defaultRenderer: ({res, data}) => res.send(data),
+    defaultController: {
+      renderer: ({res, data}) => res.send(data),
+    },
     // note that if you do not include the default processors or include them out of order then YMMV with regards to the rest of the documentation. The only test case run as part of this project is to add new processors to the beginning of the config.
     controllerProcessors: [permissionProcessor, ...defaultProcessors]
   }));
