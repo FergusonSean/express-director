@@ -6,8 +6,10 @@ export default async () => {
   app.use(express.json());
   app.use(await loadDirectory({ 
     controllerPath: undefined,
-    defaultRenderer: ({ path, req, res, data }) => {
-      res.send({ path, body: req.body, data });
+    defaultController: {
+      renderer: ({ path, req, res, data }) => {
+        res.send({ path, body: req.body, data });
+      }
     }
   }));
   app.get('/', (_, res) => {

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
 import {HandlerMethod, controllerHandler } from './controller-handler';
@@ -22,20 +22,19 @@ const ALLOWED_EXTENSIONS = ['js', 'mjs', 'cjs'];
 
 const VALID_FILENAMES = HandlerMethod.flatMap((m) => ALLOWED_EXTENSIONS.map(e => `${m}.${e}`))
 
-type LoadDirectoryConfig = {
+type LoadDirectoryConfig<Controller> = {
   controllerPath?: string;
-  defaultRenderer?: (context: { 
-    req: Request, 
-    res: Response, 
-    path: string, 
-    data: any
-  }) => any;
+  defaultController?: Controller
 }
 
-export const loadDirectory = async ({
+export const loadDirectory = async <Controller extends { 
+  renderer?: (ctx: {res: Response, data: any}) => any
+} = DefaultController>({
   controllerPath = path.join(process.cwd(), 'src', 'controllers'),
-  defaultRenderer = ({res, data}) => res.send(data), 
-}: LoadDirectoryConfig) => {
+  defaultController = {
+    renderer: ({res, data}) => res.send(data), 
+  } as Controller,
+}: LoadDirectoryConfig<Controller>) => {
   const router = Router({ mergeParams: true });
   const dirEntries = await fs.readdir(controllerPath, { withFileTypes: true });
 
@@ -49,26 +48,26 @@ export const loadDirectory = async ({
   await files.reduce(async (p, f) => {
     await p;
     // eslint-disable-next-line no-eval
-    let c = await eval(`import("${path.join(controllerPath, f.name)}")`) as { default?: DefaultController<any, any, any>};
+    let c = await eval(`import("${path.join(controllerPath, f.name)}")`) as { default?: Controller};
 
     while(c.default) {
-      c = c.default as { default?: DefaultController<any, any, any>};
+      c = c.default as { default?: Controller};
     }
     controllerHandler(
       router, 
       path.relative('', path.join(controllerPath, f.name)), 
       f.name, 
       { 
-        renderer: defaultRenderer, 
-        ...c 
-      } as DefaultController<any, any, any>);
+        ...defaultController,
+        ...c as Controller 
+      });
   }, Promise.resolve());
 
   const directories = dirEntries.filter((d) => d.isDirectory()).reverse();
 
   await directories.reduce(async (p, d) => {
     await p;
-    router.use(`/${d.name}`, await loadDirectory({ controllerPath: path.join(controllerPath, d.name), defaultRenderer}));
+    router.use(`/${d.name}`, await loadDirectory({ controllerPath: path.join(controllerPath, d.name), defaultController}));
   }, Promise.resolve());
 
   return router;
