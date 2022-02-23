@@ -4,5 +4,5 @@ let app;
 
 (async () => {
     app = await createApp();
-    app.listen(3300);
-})();
+    return app.listen(3300);
+})().catch(() => process.exit(1));
