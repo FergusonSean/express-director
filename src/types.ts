@@ -1,6 +1,10 @@
 import {JSONSchemaType} from 'ajv';
 import { Router, Request, Response, NextFunction } from 'express';
 
+export type SwaggerProcessor = {
+  swagger?: any
+}
+
 export type HandlerResponderProcessor<HandlerResult = any> = {
   handler?: (req: Request, res: Response, next: NextFunction) => HandlerResult
   renderer?: (context: { req: Request, res: Response, path: string, data: HandlerResult}) => any,
@@ -21,7 +25,7 @@ export type SchemasProcessor<QueryType = null, BodyType = null, ParamsType = nul
 export type DefaultController<QueryType = null, BodyType = null, ParamsType = null, HandlerResult = any> = 
   Omit<(PrepareRouterProcessor & 
   SchemasProcessor<QueryType, BodyType, ParamsType> & 
-  HandlerResponderProcessor<HandlerResult>), 'handler'> & 
+  HandlerResponderProcessor<HandlerResult> & SwaggerProcessor), 'handler'> & 
   {
     handler?: (
       req: Request & { 

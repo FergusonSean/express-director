@@ -14,7 +14,7 @@ describe('mjs server', () => {
   after(() => server.close());
 
   it('GET /healthcheck', async () => {
-    const response = await request(app).get('/healthcheck').expect(200);
+    const response = await request(server).get('/healthcheck').expect(200);
     expect(response.text).to.eql('healthy');
   });
 
