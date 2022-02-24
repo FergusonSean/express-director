@@ -2,7 +2,7 @@ import {JSONSchemaType} from 'ajv';
 import { Router, Request, Response, NextFunction } from 'express';
 
 export type SwaggerProcessor = {
-  swagger?: any
+  swagger?: object
 }
 
 export type HandlerResponderProcessor<HandlerResult = any> = {
@@ -36,4 +36,4 @@ export type DefaultController<QueryType = null, BodyType = null, ParamsType = nu
     ) => HandlerResult
   }
 
-export type ControllerProcessor<Controller = DefaultController, Handler = DefaultController['handler']> = (context: { router: Router, file: string, path: string, controller: Controller}) => Handler[]
+export type ControllerProcessor<Controller = DefaultController, Handler = DefaultController['handler']> = (context: { router: Router, file: string, path: string, controller: Controller}) => { handlers: Handler[], swagger: object }

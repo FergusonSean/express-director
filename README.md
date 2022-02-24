@@ -102,6 +102,10 @@ This Processor handles the schemas key on controllers. See below for detailed do
 
 This Processor handles the handler and renderer key on controllers. See below for detailed documentation.
 
+###### processSwagger
+
+This processor handles the swagger key as an override/enhancement to auto generated swagger config.
+
 ##### Creating custom processors
 
 Example custom processor:
@@ -110,19 +114,24 @@ Example custom processor:
 // in a file called mermission-processor.js
 const processor = ({path, controller}) => {
   if (controller.permission) {
-    return [
-      async (req, res, next) => {
-        try {
-          if(req.permissions.includes(controller.permission) {
-            return next()
-          }
+    return {
+      handlers: [
+        async (req, res, next) => {
+          try {
+            if(req.permissions.includes(controller.permission) {
+              return next()
+            }
 
-          res.sendStatus(403)
-        } catch (e) {
-          next(e);
-        }
-      },
-    ]
+            res.sendStatus(403)
+          } catch (e) {
+            next(e);
+          }
+        },
+      ],
+      swagger: {
+        description: `This endpoint requires the ${controller.permission} permission`
+      }
+    }
   }
 
   return [];
