@@ -1,6 +1,6 @@
 import Ajv from 'ajv';
 import { Request, Response, NextFunction } from 'express';
-import { SchemasProcessor } from '../types'
+import { SchemasProcessor, ControllerProcessor } from '../types'
 
 
 const ajv = new Ajv({
@@ -26,7 +26,40 @@ const getValidator = <Controller extends SchemasProcessor>(c: Controller, field:
   };
 };
 
-const processor = <Controller extends SchemasProcessor>({controller}: { controller: Controller}) =>
-  controller.schemas ? Object.keys(controller.schemas).map((field) => getValidator(controller, (field as keyof typeof controller.schemas))) : []
+const processor: ControllerProcessor<SchemasProcessor> = ({controller}) => {
+    const params = [
+      ...(Object.keys(controller?.schemas?.params?.properties as object || {}).map((p: string) => ({
+        in: 'path', 
+        name: p,
+        required: !!((controller?.schemas?.params?.required as Array<string>)?.includes?.(p))
+      })) || []),
+
+      ...(Object.keys(controller?.schemas?.query?.properties as object || {}).map((p: string) => ({
+          in: 'query', 
+          name: p,
+          required: !!((controller?.schemas?.params?.required as Array<string>)?.includes?.(p))
+      })) || [])
+    ]
+
+  return {
+    handlers: controller.schemas ?  Object.keys(controller.schemas).map(
+      (field) => getValidator(controller, (field as keyof typeof controller.schemas))
+    ) : [],
+    swagger: {
+      ...(controller?.schemas?.body ? {
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: controller?.schemas?.body
+            }
+          }
+        }
+      } : {}),
+      ...(params.length ? {
+        parameters: params
+      } : {})
+    },
+  }
+}
 
 export default processor

@@ -38,46 +38,23 @@ export const controllerHandler = <Controller extends DefaultController>(router: 
 
   const processors: ControllerProcessor<Controller>[] = [prepareRouter, processSchemas, processHandlerAndResponder]
 
-  const handlers = processors.flatMap(p => p({router, path, file: f, controller: c}));
+  const results = processors.map(p => p({router, path, file: f, controller: c}));
+  const handlers = results.flatMap(r => r.handlers);
 
   if (handlers.length) {
     router[method]('/', handlers);
-
-    const params = [
-      ...(Object.keys(c?.schemas?.params?.properties as unknown || {}).map((p: string) => ({
-        in: 'path', 
-        name: p,
-        required: !!((c?.schemas?.params?.required as Array<string>)?.includes?.(p))
-      })) || []),
-
-      ...(Object.keys(c?.schemas?.query?.properties as unknown || {}).map((p: string) => ({
-          in: 'query', 
-          name: p,
-          required: !!((c?.schemas?.params?.required as Array<string>)?.includes?.(p))
-      })) || [])
-    ]
-
-    return { 
-      [method]: {
-        responses: {
-          200: {}
-        },
-        ...(c?.schemas?.body ? {
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: c?.schemas?.body
-              }
-            }
-          }
-        } : {}),
-        ...(params.length ? {
-          parameters: params
-        } : {}),
-        ...c.swagger,
-      } as unknown,
-    }
   }
 
-  return {}
+  const swaggerFields = results.reduce((m,r) => ({...m, ...r.swagger}), {})
+
+  return { 
+    [method]: {
+      responses: {
+        200: {}
+      },
+      ...swaggerFields,
+      ...c.swagger,
+    } as unknown,
+  }
+
 };

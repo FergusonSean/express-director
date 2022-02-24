@@ -6,7 +6,7 @@ const processor = <Controller extends PrepareRouterProcessor>({router, controlle
     controller.prepareRouter(router);
   }
 
-  return [];
+  return { handlers: [], swagger: {}};
 }
 
 export default processor

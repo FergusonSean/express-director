@@ -6,18 +6,20 @@ import {HandlerMethod, controllerHandler } from './controller-handler';
 import {DefaultController} from './types';
 
 import processSchemas from './processors/schemas';
+import processSwagger from './processors/swagger';
 import prepareRouter from './processors/prepare-router';
 import processHandlerAndResponder from './processors/handler-responder'
 
 export { 
   processSchemas,
   prepareRouter,
+  processSwagger,
   processHandlerAndResponder, 
 }
 
 export * from './types';
 
-export const defaultProcessors = [prepareRouter, processSchemas, processHandlerAndResponder]
+export const defaultProcessors = [prepareRouter, processSchemas, processSwagger, processHandlerAndResponder]
 
 const ALLOWED_EXTENSIONS = ['js', 'mjs', 'cjs'];
 
