@@ -49,5 +49,10 @@
     "ajv": "~8.9",
     "express": "~4.17",
     "swagger-ui-express": "~4.3"
+  },
+  "optionalDependencies": {
+    "@parcel/config-default": "^2.3.2",
+    "@parcel/core": "^2.3.2",
+    "handlebars": "^4.7.7"
   }
 }
