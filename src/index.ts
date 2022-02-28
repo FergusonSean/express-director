@@ -82,14 +82,16 @@ export const loadDirectory = async <Controller extends DefaultController>({
   bundleRoute = '/bundle',
   defaultControllerGenerator = async ({controllerPath: cp}) => {
     try {
-      // eslint-disable-next-line import/no-extraneous-dependencies
-      const { default: Handlebars} = await eval(`import("handlebars")`);
+      // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-assignment
+      const { default: Handlebars } = await eval(`import("handlebars")`);
       const parsedPath = path.parse(cp)
       const templatePath = path.join(parsedPath.dir,`${parsedPath.name}.handlebars`)
       const fileContent = await fs.readFile(templatePath)
+      // eslint-disable-next-line
       const template = Handlebars.compile(fileContent.toString())
       return {
         renderer: ({res, data }) => {
+          // eslint-disable-next-line
           res.send(template(data));
         }
       } as Controller
@@ -106,11 +108,12 @@ export const loadDirectory = async <Controller extends DefaultController>({
   },
 }: LoadDirectoryConfig<Controller>) => {
   try {
-    // eslint-disable-next-line import/no-extraneous-dependencies
+    // eslint-disable-next-line
     const { default: Handlebars} = await eval(`import("handlebars")`);
 
     await processFilesRecursively({
       rootFolder: partialPath,
+      // eslint-disable-next-line
       startFolder: () => {},
       processFile: async (p, f, currentFolder) => {
         await p;
@@ -118,6 +121,7 @@ export const loadDirectory = async <Controller extends DefaultController>({
           return 
         }
         const fileContent = await fs.readFile(path.join(currentFolder, f.name))
+        // eslint-disable-next-line
         Handlebars.registerPartial(
           path.join(
             path.relative(
@@ -181,8 +185,9 @@ export const loadDirectory = async <Controller extends DefaultController>({
   });
 
   try {
-    // eslint-disable-next-line import/no-extraneous-dependencies
+    // eslint-disable-next-line
     const { Parcel } = await eval(`import("@parcel/core")`);
+    // eslint-disable-next-line
     const bundler = new Parcel({
       entries: [path.join(clientSourcePath, 'index.css'), path.join(clientSourcePath, 'index.js')],
       defaultConfig: '@parcel/config-default',
@@ -193,8 +198,11 @@ export const loadDirectory = async <Controller extends DefaultController>({
       },
     });
 
+    // eslint-disable-next-line
     const {bundleGraph, buildTime} = await bundler.run();
+    // eslint-disable-next-line
     const bundles = bundleGraph.getBundles();
+    // eslint-disable-next-line
     console.log(`✨ Built ${bundles.length} bundles in ${buildTime}ms!`);
 
     router.use(bundleRoute, serveStatic(path.join(process.cwd(), "client-dist")))

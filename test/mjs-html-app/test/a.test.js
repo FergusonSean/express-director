@@ -5,7 +5,7 @@ import createApp from '../src/index.js';
 let app;
 let server;
 
-describe('mjs server', () => {
+describe('mjs html server', () => {
   before(async () => {
     app = await createApp();
     server = app.listen(0);
@@ -20,7 +20,9 @@ describe('mjs server', () => {
 
   it('GET /direct-return', async () => {
     const response = await request(app).get('/direct-return').expect(200);
-    expect(response.body).to.eql({ body: {}, path: 'src/controllers/direct-return/get.js', data: { hi: 5 }});
+    expect(response.text).to.include('5');
+    expect(response.text).to.include('html');
+    expect(response.text).to.include('layout fun');
   });
 
   it('GET /nested/route', async () => {
@@ -44,14 +46,10 @@ describe('mjs server', () => {
     it('returns 200 on valid request', async () => {
       const response = await request(app).post('/schema/123456?middleName=old').send({ firstName: 'the', lastName: 'man' }).expect(200);
       expect(response.body).to.eql({ 
-        path: 'src/controllers/schema/:id/post.js',
-        data: {
-          id: 123456, 
-          firstName: 'the', 
-          middleName: 'old', 
-          lastName: 'man',
-        }, 
-        body: { firstName: 'the', lastName: 'man' }
+        id: 123456, 
+        firstName: 'the', 
+        middleName: 'old', 
+        lastName: 'man',
       });
     });
 
