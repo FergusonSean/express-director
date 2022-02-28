@@ -8,11 +8,8 @@
     "lint:fix": "eslint --fix . 'src/**/*.[tj]s' 'test/**/*.[tj]s'",
     "watch": "npm run build -- --watch src",
     "prepublishOnly": "npm run build",
-    "install:all": "npm i && npm --prefix test/cjs-app install && npm --prefix test/mjs-app install && npm --prefix test/ts-app install",
-    "test:cjs": "npm --prefix test/cjs-app run test",
-    "test:mjs": "npm --prefix test/mjs-app run test",
-    "test:ts": "npm --prefix test/ts-app run test",
-    "test": "npm run build && npm run install:all && npm run lint && npm run test:mjs && npm run test:cjs && npm run test:ts"
+    "install:all": "npm i && for d in test/*/; do npm --prefix $d install; done;",
+    "test": "npm run build && npm run install:all && npm run lint && for d in test/*/; do npm --prefix $d test; done;"
   },
   "type": "module",
   "main": "./dist/index.cjs",
