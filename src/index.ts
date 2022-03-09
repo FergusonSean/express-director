@@ -107,9 +107,10 @@ export const loadDirectory = async <Controller extends DefaultController>({
     openapi: '3.0.0',
   },
 }: LoadDirectoryConfig<Controller>) => {
+  let Handlebars: any;
   try {
     // eslint-disable-next-line
-    const { default: Handlebars} = await eval(`import("handlebars")`);
+    ({ default: Handlebars} = await eval(`import("handlebars")`));
 
     await processFilesRecursively({
       rootFolder: partialPath,
@@ -204,6 +205,16 @@ export const loadDirectory = async <Controller extends DefaultController>({
     const bundles = bundleGraph.getBundles();
     // eslint-disable-next-line
     console.log(`✨ Built ${bundles.length} bundles in ${buildTime}ms!`);
+    if(Handlebars) {
+      Handlebars.registerHelper('cssPath', () => path.join(
+        bundleRoute,
+        path.relative(path.join(process.cwd(), "client-dist"), bundles[0].filePath)
+      ))
+      Handlebars.registerHelper('jsPath', () => path.join(
+        bundleRoute,
+        path.relative(path.join(process.cwd(), "client-dist"), bundles[1].filePath)
+      ))
+    }
 
     router.use(bundleRoute, serveStatic(path.join(process.cwd(), "client-dist")))
   } catch(err) {
