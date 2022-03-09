@@ -206,12 +206,16 @@ export const loadDirectory = async <Controller extends DefaultController>({
     // eslint-disable-next-line
     console.log(`✨ Built ${bundles.length} bundles in ${buildTime}ms!`);
     if(Handlebars) {
+      // eslint-disable-next-line
       Handlebars.registerHelper('cssPath', () => path.join(
         bundleRoute,
+        // eslint-disable-next-line
         path.relative(path.join(process.cwd(), "client-dist"), bundles[0].filePath)
       ))
+      // eslint-disable-next-line
       Handlebars.registerHelper('jsPath', () => path.join(
         bundleRoute,
+        // eslint-disable-next-line
         path.relative(path.join(process.cwd(), "client-dist"), bundles[1].filePath)
       ))
     }
