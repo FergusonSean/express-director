@@ -1,7 +1,8 @@
-import { Router, Response, Request, NextFunction } from 'express';
+import { Router, Response, Request, NextFunction, static as serveStatic } from 'express';
 import swaggerUi from 'swagger-ui-express';
 import path from 'path';
 import fs from 'fs/promises';
+import {Dirent} from 'fs';
 import {HandlerMethod, controllerHandler } from './controller-handler';
 import {DefaultController} from './types';
 
@@ -25,91 +26,205 @@ const ALLOWED_EXTENSIONS = ['js', 'mjs', 'cjs'];
 
 const VALID_FILENAMES = HandlerMethod.flatMap((m) => ALLOWED_EXTENSIONS.map(e => `${m}.${e}`))
 
+const processFilesRecursively = async <Context, FolderResult, FileEntries extends object, DirEntries extends object>({
+  rootFolder, 
+  currentFolder = rootFolder,
+  startFolder,
+  endFolder,
+  processFile,
+  processDirectory,
+}: {
+  rootFolder: string,
+  currentFolder?: string
+  startFolder: (folderName: string) => Context,
+    processFile: (memo: FileEntries | Promise<FileEntries>, v: Dirent, cf: string, context: Context) => FileEntries | Promise<FileEntries>,
+  processDirectory: (memo: DirEntries | Promise<DirEntries>, v: Dirent, folderResult: FolderResult, cf: string, context: Context) => DirEntries | Promise<DirEntries>,
+  endFolder: (folderName: string, context: Context, fileEntries: FileEntries, dirEntries: DirEntries) => FolderResult,
+}) => {
+  const context = startFolder(currentFolder)
+  const d = await fs.readdir(currentFolder, { withFileTypes: true });
+  const files = d.filter(
+    (dirEnt) => !dirEnt.isDirectory()
+  )
+
+  const fileResult = await files.reduce(async (m, v) => processFile(m,v,currentFolder, context), Promise.resolve({} as FileEntries))
+
+  const directories = d.filter((dirEnt) => dirEnt.isDirectory()).reverse();
+  const dirEntries = await directories.reduce(async (m, v) => {
+    const dirResult: FolderResult = await processFilesRecursively({
+      rootFolder, 
+      currentFolder: path.join(currentFolder, v.name), 
+      startFolder,
+      endFolder,
+      processFile,
+      processDirectory,
+    })
+
+    return processDirectory(m,v, dirResult,currentFolder, context)
+  }, Promise.resolve({} as DirEntries))
+
+  return endFolder(currentFolder, context, fileResult, dirEntries)
+}
+
 type LoadDirectoryConfig<Controller> = {
-  controllerRoot?: string
   controllerPath?: string
-  defaultController?: Controller
+  partialPath?: string
+  clientSourcePath?: string
+  bundleRoute?: string
+  defaultControllerGenerator?: (config: {controllerPath: string}) => Controller | Promise<Controller>
   swagger?: any 
 }
 
-type LoadDirectoryConfigRec<Controller> = {
-  controllerRoot: string
-  controllerPath: string
-  defaultController: Controller
-}
+export const loadDirectory = async <Controller extends DefaultController>({
+  controllerPath = path.join(process.cwd(), 'src', 'controllers'),
+  partialPath = path.join(process.cwd(), 'src', 'partials'),
+  clientSourcePath = path.join(process.cwd(), 'src', 'client'),
+  bundleRoute = '/bundle',
+  defaultControllerGenerator = async ({controllerPath: cp}) => {
+    try {
+      // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-assignment
+      const { default: Handlebars } = await eval(`import("handlebars")`);
+      const parsedPath = path.parse(cp)
+      const templatePath = path.join(parsedPath.dir,`${parsedPath.name}.handlebars`)
+      const fileContent = await fs.readFile(templatePath)
+      // eslint-disable-next-line
+      const template = Handlebars.compile(fileContent.toString())
+      return {
+        renderer: ({res, data }) => {
+          // eslint-disable-next-line
+          res.send(template(data));
+        }
+      } as Controller
+    } catch {
+      return {
+        renderer: ({res, data }) => {
+          res.send(data);
+        }
+      } as Controller
+    }
+  },
+  swagger = {
+    openapi: '3.0.0',
+  },
+}: LoadDirectoryConfig<Controller>) => {
+  let Handlebars: any;
+  try {
+    // eslint-disable-next-line
+    ({ default: Handlebars} = await eval(`import("handlebars")`));
 
-const loadDirectoryRec = async <Controller extends DefaultController>({
-  controllerRoot,
-  controllerPath,
-  defaultController,
-}: LoadDirectoryConfigRec<Controller>) => {
-  const router: Router = Router({ mergeParams: true });
-  const dirEntries = await fs.readdir(controllerPath, { withFileTypes: true });
+    await processFilesRecursively({
+      rootFolder: partialPath,
+      // eslint-disable-next-line
+      startFolder: () => {},
+      processFile: async (p, f, currentFolder) => {
+        await p;
+        if(!f.name.endsWith('.handlebars')) {
+          return 
+        }
+        const fileContent = await fs.readFile(path.join(currentFolder, f.name))
+        // eslint-disable-next-line
+        Handlebars.registerPartial(
+          path.join(
+            path.relative(
+              partialPath,
+              currentFolder
+            ), path.parse(f.name).name
+          ), 
+          fileContent.toString()
+        )
+      },
+      processDirectory: () => ({}),
+      endFolder: () => ({}),
+    });
+  } catch(err) {
+    console.warn('Unable to load partials')
+  }
 
-  const files = dirEntries.filter(
-    (d) => !d.isDirectory() && VALID_FILENAMES.includes(d.name),
-  ).sort(
-    (a, b) => VALID_FILENAMES.indexOf(a.name) - VALID_FILENAMES.indexOf(b.name),
-    );
-
-    const endpointEntries = await files.reduce(async (p, f) => {
+  const [router, swaggerPaths]: [Router, object] = await processFilesRecursively({
+    rootFolder: controllerPath,
+    startFolder: () => Router({ mergeParams: true }),
+    processFile: async (p, f, cp, r) => {
+      if(!VALID_FILENAMES.includes(f.name)) {
+        return p;
+      }
       const entry = await p;
       // eslint-disable-next-line no-eval
-      let c = await eval(`import("${path.join(controllerPath, f.name)}")`) as { default?: Controller};
+      let c = await eval(`import("${path.join(cp, f.name)}")`) as { default?: Controller};
 
       while(c.default) {
         c = c.default as { default?: Controller};
       }
       return { ...entry, ...controllerHandler(
-        router, 
-        path.relative('', path.join(controllerPath, f.name)), 
+        r, 
+        path.relative('', path.join(cp, f.name)), 
         f.name, 
         { 
-          ...defaultController,
+          ...await defaultControllerGenerator(
+            { 
+              controllerPath: path.relative('', path.join(cp, f.name)), 
+            }
+          ),
           ...c as Controller 
-        })};
-    }, Promise.resolve({}));
+        }
+      )} as object
+    },
+    processDirectory: async (p, d, result, _, r) => {
+      const s = await p;
+      const [subRouter, nestedSwagger] = result
+      r.use(`/${d.name}`, subRouter);
 
-    const directories = dirEntries.filter((d) => d.isDirectory()).reverse();
-
-    const directoryEntries: Record<string, unknown> = await directories.reduce(async (p, d) => {
-      const swagger = await p;
-      const [subRouter, nestedSwagger] = await loadDirectoryRec({ 
-        controllerRoot, 
-        controllerPath: path.join(controllerPath, d.name), 
-        defaultController
-      })
-      router.use(`/${d.name}`, subRouter);
-
-      return { ...swagger, ...nestedSwagger}
-    }, Promise.resolve({}));
-
-    return [
-      router, 
+      return { ...s, ...nestedSwagger}
+    },
+    endFolder: (currentControllerPath, r, endpointEntries, directoryEntries) => [
+      r, 
       Object.keys(endpointEntries).length ? { 
         ...directoryEntries,
-        [`/${path.relative(controllerRoot, controllerPath).replace(/:([^/]*)/, '{$1}')}`]: endpointEntries,
+        [`/${path.relative(controllerPath, currentControllerPath).replace(/:([^/]*)/, '{$1}')}`]: endpointEntries,
       }
-        : directoryEntries
-    ] as const;
-};
+      : directoryEntries
+    ],
+  });
 
-export const loadDirectory = async <Controller extends DefaultController = DefaultController>({
-  controllerPath = path.join(process.cwd(), 'src', 'controllers'),
-    defaultController = {
-    renderer: ({res, data}) => res.send(data), 
-  } as Controller,
-    swagger = {
-      openapi: '3.0.0',
-    },
-}: LoadDirectoryConfig<Controller>) => {
-  const [router, swaggerPaths] = await loadDirectoryRec({
-    controllerRoot: controllerPath,
-    controllerPath, 
-    defaultController,
-  })
+  try {
+    // eslint-disable-next-line
+    const { Parcel } = await eval(`import("@parcel/core")`);
+    // eslint-disable-next-line
+    const bundler = new Parcel({
+      entries: [path.join(clientSourcePath, 'index.css'), path.join(clientSourcePath, 'index.js')],
+      defaultConfig: '@parcel/config-default',
+      targets: {
+        main: {
+          distDir: path.join(process.cwd(), "client-dist")
+        }
+      },
+    });
 
+    // eslint-disable-next-line
+    const {bundleGraph, buildTime} = await bundler.run();
+    // eslint-disable-next-line
+    const bundles = bundleGraph.getBundles();
+    // eslint-disable-next-line
+    console.log(`✨ Built ${bundles.length} bundles in ${buildTime}ms!`);
+    if(Handlebars) {
+      // eslint-disable-next-line
+      Handlebars.registerHelper('cssPath', () => path.join(
+        bundleRoute,
+        // eslint-disable-next-line
+        path.relative(path.join(process.cwd(), "client-dist"), bundles[0].filePath)
+      ))
+      // eslint-disable-next-line
+      Handlebars.registerHelper('jsPath', () => path.join(
+        bundleRoute,
+        // eslint-disable-next-line
+        path.relative(path.join(process.cwd(), "client-dist"), bundles[1].filePath)
+      ))
+    }
 
+    router.use(bundleRoute, serveStatic(path.join(process.cwd(), "client-dist")))
+  } catch(err) {
+    console.warn('Unable to compile client assets')
+    console.warn((err as { diagnostics?: object}).diagnostics)
+  }
 
   if(swagger) {
     router.use('/api-docs', (req: Request & { swaggerDoc: unknown }, _: Response, next: NextFunction) => {
