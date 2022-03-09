@@ -56,7 +56,7 @@ const startApp = async () => {
   app.use(await loadDirectory({
     // these fields are optional as sane defaults are provided, but you must pass an object even if you are not overriding any of the defaults.
     controllerPath: path.join(process.cwd(), 'src', 'controllers'),
-    defaultController: {
+    defaultControllerGenerator: () => {
       renderer: ({res, data}) => res.send(data),
     }
   }));
@@ -75,9 +75,21 @@ loadDirectory takes a context argument with several fields you can use to custom
 
 This is the path to your controllers. Defaults to the current working directory/src/controllers. If your controller root is in a different location you should make sure that this is set to the absolute path of that directory.
 
-#### defaultController
+#### bundleRoute
 
-This is an object that will be shallowly merged with your controllers to set default values across all your controllers as necessary. For details on the shape of this object check out the controllers section below. Note that the actual controller will override any conflicting values set here.
+This is the express route that your parcel generated assets will be served on. Generally the only need to change this is if it conflicts with an application route. Default is '/bundle'
+
+#### clientSourcePath
+
+This is the path to your client source files if you have included the parcel optional dependencies. A index.css and index.js file will be looked for in this directory and compiled into a working client source using parcel. The path for use in link and script tags will be made available to your handbars templates at cssPath amd jsPath respectively. Defaults to current wroking directory/src/client
+
+#### partialPath
+
+This is the path to your handlbars partials if you are have included the handlebars optional dependency. Defaults to current wroking directory/src/partials
+
+#### defaultControllerGenerator
+
+This is a function that receives the controllers filepath and  returns an object that will be shallowly merged with your controllers to set default values across all your controllers as necessary. For details on the shape of this object check out the controllers section below. Note that the actual controller will override any conflicting values set here.
 
 #### swagger
 
@@ -254,6 +266,14 @@ For clarification if load order is causing problems your files in a particular f
 
 1. All .js files in the directory in lexical order
 2. All folders in reverse lexical order depth first
+
+### Html Rendering
+
+By default if you include the optional dependencies for handlebars and parcel express director will serach for .handlebars files matching the controller files and render them using the controllers return value as the input object. 
+
+It will also automatically search for an index.html and index.css file in your clientSourcePath (default: src/client) and compile them using parcel. To use custom parcel options you can add the appropriate config files to your project based on the parcel docs. the paths to the generated src will be available as the cssPath and jsPath variables so that they can be easily added to a layout partial. See the test/mjs-html-app folder for a detailed example project
+
+You can also add shared handlebars partials to the partialPath (default: src/partials) these will be made available automatically.
 
 
 ### Typescript types
