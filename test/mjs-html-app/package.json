@@ -1,0 +1,26 @@
+{
+  "name": "test-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "start": "node src/start.js"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@parcel/config-default": "^2.3.2",
+    "@parcel/core": "^2.3.2",
+    "express": "^4.17.2",
+    "express-director": "file:../..",
+    "handlebars": "^4.7.7",
+    "supertest": "^6.2.2",
+    "swagger-ui-express": "^4.3.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.5",
+    "mocha": "^9.2.0"
+  }
+}
