@@ -1,10 +1,10 @@
-import { Router, Response, Request, NextFunction, static as serveStatic } from 'express';
+import { Router, Response, Request, NextFunction } from 'express';
 import swaggerUi from 'swagger-ui-express';
 import path from 'path';
 import fs from 'fs/promises';
 import {Dirent} from 'fs';
 import {HandlerMethod, controllerHandler } from './controller-handler';
-import {DefaultController} from './types';
+import {DefaultController, ControllerProcessor} from './types';
 
 import processSchemas from './processors/schemas';
 import processSwagger from './processors/swagger';
@@ -68,18 +68,13 @@ const processFilesRecursively = async <Context, FolderResult, FileEntries extend
 
 type LoadDirectoryConfig<Controller> = {
   controllerPath?: string
-  partialPath?: string
-  clientSourcePath?: string
-  bundleRoute?: string
   defaultControllerGenerator?: (config: {controllerPath: string}) => Controller | Promise<Controller>
+  controllerProcessors?: ControllerProcessor<Controller>[]
   swagger?: any 
 }
 
 export const loadDirectory = async <Controller extends DefaultController>({
   controllerPath = path.join(process.cwd(), 'src', 'controllers'),
-  partialPath = path.join(process.cwd(), 'src', 'partials'),
-  clientSourcePath = path.join(process.cwd(), 'src', 'client'),
-  bundleRoute = '/bundle',
   defaultControllerGenerator = async ({controllerPath: cp}) => {
     try {
       // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-assignment
@@ -103,43 +98,11 @@ export const loadDirectory = async <Controller extends DefaultController>({
       } as Controller
     }
   },
+  controllerProcessors = defaultProcessors,
   swagger = {
     openapi: '3.0.0',
   },
 }: LoadDirectoryConfig<Controller>) => {
-  let Handlebars: any;
-  try {
-    // eslint-disable-next-line
-    ({ default: Handlebars} = await eval(`import("handlebars")`));
-
-    await processFilesRecursively({
-      rootFolder: partialPath,
-      // eslint-disable-next-line
-      startFolder: () => {},
-      processFile: async (p, f, currentFolder) => {
-        await p;
-        if(!f.name.endsWith('.handlebars')) {
-          return 
-        }
-        const fileContent = await fs.readFile(path.join(currentFolder, f.name))
-        // eslint-disable-next-line
-        Handlebars.registerPartial(
-          path.join(
-            path.relative(
-              partialPath,
-              currentFolder
-            ), path.parse(f.name).name
-          ), 
-          fileContent.toString()
-        )
-      },
-      processDirectory: () => ({}),
-      endFolder: () => ({}),
-    });
-  } catch(err) {
-    console.warn('Unable to load partials')
-  }
-
   const [router, swaggerPaths]: [Router, object] = await processFilesRecursively({
     rootFolder: controllerPath,
     startFolder: () => Router({ mergeParams: true }),
@@ -165,7 +128,8 @@ export const loadDirectory = async <Controller extends DefaultController>({
             }
           ),
           ...c as Controller 
-        }
+        },
+        controllerProcessors
       )} as object
     },
     processDirectory: async (p, d, result, _, r) => {
@@ -184,47 +148,6 @@ export const loadDirectory = async <Controller extends DefaultController>({
       : directoryEntries
     ],
   });
-
-  try {
-    // eslint-disable-next-line
-    const { Parcel } = await eval(`import("@parcel/core")`);
-    // eslint-disable-next-line
-    const bundler = new Parcel({
-      entries: [path.join(clientSourcePath, 'index.css'), path.join(clientSourcePath, 'index.js')],
-      defaultConfig: '@parcel/config-default',
-      targets: {
-        main: {
-          distDir: path.join(process.cwd(), "client-dist")
-        }
-      },
-    });
-
-    // eslint-disable-next-line
-    const {bundleGraph, buildTime} = await bundler.run();
-    // eslint-disable-next-line
-    const bundles = bundleGraph.getBundles();
-    // eslint-disable-next-line
-    console.log(`✨ Built ${bundles.length} bundles in ${buildTime}ms!`);
-    if(Handlebars) {
-      // eslint-disable-next-line
-      Handlebars.registerHelper('cssPath', () => path.join(
-        bundleRoute,
-        // eslint-disable-next-line
-        path.relative(path.join(process.cwd(), "client-dist"), bundles[0].filePath)
-      ))
-      // eslint-disable-next-line
-      Handlebars.registerHelper('jsPath', () => path.join(
-        bundleRoute,
-        // eslint-disable-next-line
-        path.relative(path.join(process.cwd(), "client-dist"), bundles[1].filePath)
-      ))
-    }
-
-    router.use(bundleRoute, serveStatic(path.join(process.cwd(), "client-dist")))
-  } catch(err) {
-    console.warn('Unable to compile client assets')
-    console.warn((err as { diagnostics?: object}).diagnostics)
-  }
 
   if(swagger) {
     router.use('/api-docs', (req: Request & { swaggerDoc: unknown }, _: Response, next: NextFunction) => {

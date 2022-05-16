@@ -1,6 +1,6 @@
 {
   "name": "express-director",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A file system based router for express that eases standardizing controller handling",
   "scripts": {
     "build": "tsup-node src/index.ts --format cjs,esm --dts --clean",
@@ -9,7 +9,7 @@
     "watch": "npm run build -- --watch src",
     "prepublishOnly": "npm run build",
     "install:all": "npm i && for d in test/*/; do npm --prefix $d install; done;",
-    "test": "npm run build && npm run install:all && npm run lint && for d in test/*/; do npm --prefix $d test; done;"
+    "test": " set -e && npm run build && npm run install:all && npm run lint && for d in test/*/; do npm --prefix $d test; done;"
   },
   "type": "module",
   "main": "./dist/index.cjs",
@@ -46,10 +46,5 @@
     "ajv": "~8.9",
     "express": "~4.17",
     "swagger-ui-express": "~4.3"
-  },
-  "optionalDependencies": {
-    "@parcel/config-default": "^2.3.2",
-    "@parcel/core": "^2.3.2",
-    "handlebars": "^4.7.7"
   }
 }

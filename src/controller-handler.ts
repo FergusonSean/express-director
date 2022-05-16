@@ -33,10 +33,14 @@ export const HandlerMethod = [
   'unsubscribe'
 ] as const;
 
-export const controllerHandler = <Controller extends DefaultController>(router: Router, path: string, f: string, c: Controller) => {
+export const controllerHandler = <Controller extends DefaultController>(
+  router: Router, 
+  path: string, 
+  f: string, 
+  c: Controller,
+  processors: ControllerProcessor<Controller>[]
+) => {
   const method: typeof HandlerMethod[keyof typeof HandlerMethod] = HandlerMethod.find(e => e === (f.split('.').slice(0, -1).join('.')))!;
-
-  const processors: ControllerProcessor<Controller>[] = [prepareRouter, processSchemas, processHandlerAndResponder]
 
   const results = processors.map(p => p({router, path, file: f, controller: c}));
   const handlers = results.flatMap(r => r.handlers);
