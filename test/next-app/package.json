@@ -3,11 +3,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node server.js",
     "cypress": "cypress open",
     "cypress:headless": "cypress run",
     "e2e": "start-server-and-test dev http://localhost:3000 cypress",
-    "test": "start-server-and-test dev http://localhost:3000 cypress:headless"
+    "test": "npm run build && start-server-and-test start http://localhost:3000 cypress:headless"
   },
   "dependencies": {
     "next": "latest",
