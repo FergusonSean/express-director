@@ -1,4 +1,3 @@
-const { createServer } = require('http')
 const express = require('express')
 const { parse } = require('url')
 const next = require('next')
@@ -12,10 +11,6 @@ const handle = app.getRequestHandler()
 
 app.prepare().then(() => {
   const server = express()
-
-  server.get('/', (req, res) => {
-    res.send('Hello World!')
-  })
 
   server.use((req, res) => {
     try {
