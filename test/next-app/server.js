@@ -1,4 +1,5 @@
 const { createServer } = require('http')
+const express = require('express')
 const { parse } = require('url')
 const next = require('next')
 
@@ -10,10 +11,14 @@ const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
 
 app.prepare().then(() => {
-  createServer(async (req, res) => {
+  const server = express()
+
+  server.get('/', (req, res) => {
+    res.send('Hello World!')
+  })
+
+  server.use((req, res) => {
     try {
-      // Be sure to pass `true` as the second argument to `url.parse`.
-      // This tells it to parse the query portion of the URL.
       const parsedUrl = parse(req.url, true)
 
       await handle(req, res, parsedUrl)
@@ -22,8 +27,11 @@ app.prepare().then(() => {
       res.statusCode = 500
       res.end('internal server error')
     }
-  }).listen(port, (err) => {
-    if (err) throw err
-    console.log(`> Ready on http://${hostname}:${port}`)
+  })
+
+  server.listen(port, () => {
+    console.log(`Example app listening on port ${port}`)
   })
 })
+
+
