@@ -17,4 +17,10 @@ jobs:
         if: failure()
         with:
             name: cypress-snapshots
-            path: test/next-app/cypress/snapshots
+            path: test/next-app/cypress/screenshots
+      - name: Upload videos
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+            name: cypress-videos
+            path: test/next-app/cypress/videos
