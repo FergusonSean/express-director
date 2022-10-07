@@ -12,7 +12,7 @@ const handle = app.getRequestHandler()
 app.prepare().then(() => {
   const server = express()
 
-  server.use((req, res) => {
+  server.use(async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true)
 
