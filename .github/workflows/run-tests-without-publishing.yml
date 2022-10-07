@@ -13,7 +13,7 @@ jobs:
       - run: npm ci
       - run: npm run test
       - name: Upload screenshots
-        uses: actions/upload-artifact@latest
+        uses: actions/upload-artifact
         if: failure()
         with:
             name: cypress-snapshots
