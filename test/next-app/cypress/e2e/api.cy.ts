@@ -1,3 +1,4 @@
+/* eslint-disable */
 describe('next server custom processor', () => {
   it('GET /healthcheck', () => {
     cy.request('/healthcheck').should((response) => {

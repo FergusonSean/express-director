@@ -16,18 +16,16 @@ app.prepare().then(async () => {
   server.use(await loadDirectory({
     controllerProcessors: [ ({controller}) => ({
       handlers: [
-        (_, res, next) => {
+        (_, res, nextHandler) => {
           if(controller.headers) res.set(controller.headers)
-          next();
+          nextHandler();
         }
       ]
 
     }), ...defaultProcessors],
   }));
 
-  server.use((req, res) => {
-    return handle(req, res)
-  })
+  server.use((req, res) => handle(req, res))
 
   server.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
