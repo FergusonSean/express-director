@@ -11,11 +11,16 @@ import processSwagger from './processors/swagger';
 import prepareRouter from './processors/prepare-router';
 import processHandlerAndResponder from './processors/handler-responder'
 
+import checkRequestField from './processors/check-request-field'
+import checkRequestFieldContains from './processors/check-request-field-contains'
+
 export { 
   processSchemas,
   prepareRouter,
   processSwagger,
   processHandlerAndResponder, 
+  checkRequestField,
+  checkRequestFieldContains,
 }
 
 export * from './types';

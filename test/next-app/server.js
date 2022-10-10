@@ -1,5 +1,5 @@
 const express = require('express')
-const { loadDirectory, defaultProcessors } = require('express-director');
+const { loadDirectory, defaultProcessors, checkRequestFieldContains, checkRequestField } = require('express-director');
 
 const next = require('next')
 
@@ -14,15 +14,19 @@ app.prepare().then(async () => {
   const server = express()
   server.use(express.json());
   server.use(await loadDirectory({
-    controllerProcessors: [ ({controller}) => ({
-      handlers: [
-        (_, res, nextHandler) => {
-          if(controller.headers) res.set(controller.headers)
-          nextHandler();
-        }
-      ]
-
-    }), ...defaultProcessors],
+    controllerProcessors: [ 
+      ({controller}) => ({
+        handlers: [
+          (_, res, nextHandler) => {
+            if(controller.headers) res.set(controller.headers)
+            nextHandler();
+          }
+        ]
+      }), 
+      checkRequestField('query.seriousness', 'seriousness'),
+      checkRequestFieldContains('query.beers', 'beer'),
+      ...defaultProcessors
+    ],
   }));
 
   server.use((req, res) => handle(req, res))

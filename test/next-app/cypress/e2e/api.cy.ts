@@ -45,6 +45,85 @@ describe('next server custom processor', () => {
     })
   )
 
+  describe('GET /serious', () => {
+    it('returns 200 when seriousness is extreme', () => {
+      cy.request({ 
+        url: '/serious', 
+        qs: { seriousness: 'extreme' },
+        failOnStatusCode: false
+      }).should(response => {
+        expect(response.body).to.eql('serious');
+        expect(response.status).to.eql(200);
+      })
+    })
+    it('returns 403 when seriousness is minimal', () => {
+      cy.request({ 
+        url: '/serious', 
+        qs: { seriousness: 'minimal' },
+        failOnStatusCode: false
+      }).should(response => {
+        expect(response.status).to.eql(403);
+      })
+    })
+    it('returns 403 when seriousness is missing', () => {
+      cy.request({ 
+        url: '/serious', 
+        failOnStatusCode: false
+      }).should(response => {
+        expect(response.status).to.eql(403);
+      })
+    })
+  })
+
+  describe('GET /beers', () => {
+    it('returns 200 when beers contains bud', () => {
+      cy.request({ 
+        url: '/beers', 
+        qs: { beers: ['bud', 'coors'] },
+        failOnStatusCode: false
+      }).should(response => {
+        expect(response.body).to.eql('beers');
+        expect(response.status).to.eql(200);
+      })
+    })
+    it('returns 200 when beers is bud', () => {
+      cy.request({ 
+        url: '/beers', 
+        qs: { beers: 'bud' },
+        failOnStatusCode: false
+      }).should(response => {
+        expect(response.body).to.eql('beers');
+        expect(response.status).to.eql(200);
+      })
+    })
+    it('returns 403 when beers does not contain bud', () => {
+      cy.request({ 
+        url: '/beers', 
+        qs: { beers: ['notbud', 'coors'] },
+        failOnStatusCode: false
+      }).should(response => {
+        expect(response.status).to.eql(403);
+      })
+    })
+    it('returns 403 when beers is not bud', () => {
+      cy.request({ 
+        url: '/beers', 
+        qs: { beers: 'notbud' },
+        failOnStatusCode: false
+      }).should(response => {
+        expect(response.status).to.eql(403);
+      })
+    })
+    it('returns 403 when beers is missing', () => {
+      cy.request({ 
+        url: '/beers', 
+        failOnStatusCode: false
+      }).should(response => {
+        expect(response.status).to.eql(403);
+      })
+    })
+  })
+
   describe('POST /schema/:id', () => {
     it('returns 200 on valid request', () => {
       cy.request({ 
