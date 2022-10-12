@@ -12,3 +12,15 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run test
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+            name: cypress-snapshots
+            path: test/next-app/cypress/screenshots
+      - name: Upload videos
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+            name: cypress-videos
+            path: test/next-app/cypress/videos

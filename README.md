@@ -106,6 +106,121 @@ This Processor handles the handler and renderer key on controllers. See below fo
 
 This processor handles the swagger key as an override/enhancement to auto generated swagger config.
 
+##### Bundled Processors
+
+For convenience of customization we also bundle some helpful processors that are not added by default
+Example of including a bundled processor:
+
+```js
+// in your main file where express-directory is configured
+import loadDirectory, { defaultProcessors, checkRequestField } from 'express-director';
+import permissionProcessor from 'src/processors';
+const startApp = async () => {
+  const app = express();
+  app.use(middlewareThatSetsRequestPermissions)
+  app.use(await loadDirectory({
+    controllerPath: path.join(process.cwd(), 'src', 'controllers'),
+    defaultController: {
+      renderer: ({res, data}) => res.send(data),
+    },
+    // note that if you do not include the default processors or include them out of order then YMMV with regards to the rest of the documentation. The only test case run as part of this project is to add new processors to the beginning of the config.
+    controllerProcessors: [checkRequestField('user'), ...defaultProcessors]
+  }));
+  // add your favorite error handling middleware here
+  return app;
+};
+
+startApp().then(app => app.listen(3000))
+
+
+```
+
+###### checkRequestField
+
+The check request feld processor allows you to check that a field on the express req object matches a value in your controller definition. It requires you to pass the field name you wish to check against. Nested fields can be accessed using . notation (eg "user.id") you can also pass a second argument to customize the name of the controller key to use. By default the first parameter is also used for the controller key name.
+
+So if you initialize it like so:
+
+```js
+// in your main file where express-directory is configured
+import loadDirectory, { defaultProcessors, checkRequestField } from 'express-director';
+import permissionProcessor from 'src/processors';
+const startApp = async () => {
+  const app = express();
+  app.use(middlewareThatSetsRequestPermissions)
+  app.use(await loadDirectory({
+    controllerPath: path.join(process.cwd(), 'src', 'controllers'),
+    defaultController: {
+      renderer: ({res, data}) => res.send(data),
+    },
+    // note that if you do not include the default processors or include them out of order then YMMV with regards to the rest of the documentation. The only test case run as part of this project is to add new processors to the beginning of the config.
+    controllerProcessors: [checkRequestField('user'), ...defaultProcessors]
+  }));
+  // add your favorite error handling middleware here
+  return app;
+};
+
+startApp().then(app => app.listen(3000))
+
+
+```
+
+Then you can write a controller with the user key to verify that at request time req.user is set to "myusername" like so:
+
+```js
+export default {
+  user: "myusername",
+  handler: (req, res, next) => {
+    return { hello: 'world'};
+  }
+}
+```
+
+If the field does not === the value passed then a 403 error will be returned.
+
+###### checkRequestFieldContains
+
+The check request feld contains processor allows you to check that a field on the express req object contains a value in your controller definition. If the express req field is not an array this is equivalent to using checkRequestField. It requires you to pass the field name you wish to check against. Nested fields can be accessed using . notation (eg "user.id"). you can also pass a second argument to customize the name of the controller key to use. By default the first parameter is also used for the controller key name.
+
+So if you initialize it like so:
+
+```js
+// in your main file where express-directory is configured
+import loadDirectory, { defaultProcessors, checkRequestFieldContains } from 'express-director';
+import permissionProcessor from 'src/processors';
+const startApp = async () => {
+  const app = express();
+  app.use(middlewareThatSetsRequestPermissions)
+  app.use(await loadDirectory({
+    controllerPath: path.join(process.cwd(), 'src', 'controllers'),
+    defaultController: {
+      renderer: ({res, data}) => res.send(data),
+    },
+    // note that if you do not include the default processors or include them out of order then YMMV with regards to the rest of the documentation. The only test case run as part of this project is to add new processors to the beginning of the config.
+    controllerProcessors: [checkRequestFieldContains('user.permissions', 'permission'), ...defaultProcessors]
+  }));
+  // add your favorite error handling middleware here
+  return app;
+};
+
+startApp().then(app => app.listen(3000))
+
+
+```
+
+Then you can write a controller with the permission key to verify that at request time req.user.permissions contains "admin" like so:
+
+```js
+export default {
+  permission: 'admin',
+  handler: (req, res, next) => {
+    return { hello: 'world'};
+  }
+}
+```
+
+If the field does not contain the value passed then a 403 error will be returned.
+
 ##### Creating custom processors
 
 Example custom processor:
