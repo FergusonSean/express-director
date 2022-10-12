@@ -208,7 +208,7 @@ startApp().then(app => app.listen(3000))
 
 ```
 
-Then you can write a controller with the user key to verify that at request time req.user.permissions contains "admin" like so:
+Then you can write a controller with the permission key to verify that at request time req.user.permissions contains "admin" like so:
 
 ```js
 export default {
