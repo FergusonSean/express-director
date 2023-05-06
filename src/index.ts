@@ -155,19 +155,30 @@ export const loadDirectory = async <Controller extends DefaultController>({
   });
 
   if(swagger) {
+    const swaggerStatic = {
+      ...swagger,
+      paths: swaggerPaths,
+    }
+    const getSwaggerDocument = (req: Request) => ({
+      ...swaggerStatic,
+      servers: [
+        {
+          url: `${
+            req.protocol}://${req.get('host')!}${req.originalUrl.replace(/\/api-docs.*/, '')}`,
+        },
+      ],
+    })
+    var options = {
+      swaggerOptions: {
+        url: "/api-docs/swagger.json",
+      },
+    }
     router.use('/api-docs', (req: Request & { swaggerDoc: unknown }, _: Response, next: NextFunction) => {
-      req.swaggerDoc = {
-        ...swagger,
-        servers: [
-          {
-            url: `${
-              req.protocol}://${req.get('host')!}${req.originalUrl.replace(/\/api-docs.*/, '')}`,
-          },
-        ],
-        paths: swaggerPaths,
-      };
+      req.swaggerDoc = getSwaggerDocument(req);
       next();
-    }, swaggerUi.serve, swaggerUi.setup());
+    });
+    router.get("/api-docs/swagger.json", (req: Request & { swaggerDoc: unknown }, res) => res.json(req.swaggerDoc));
+    router.use('/api-docs', swaggerUi.serveFiles(swaggerStatic, options), swaggerUi.setup(swaggerStatic, options));
   }
 
   return router
