@@ -22,7 +22,9 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "author": "",
+  "author": "Sean Ferguson <sean.ferguson.sf@gmail.com> (https://github.com/FergusonSean)",
+  "homepage": "https://github.com/FergusonSean/express-director/blob/main/README.md",
+  "repository": "github:FergusonSean/express-director",
   "license": "MIT",
   "devDependencies": {
     "@types/chai": "^4.3.0",
