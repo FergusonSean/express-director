@@ -75,7 +75,7 @@ type LoadDirectoryConfig<Controller> = {
   controllerPath?: string
   defaultControllerGenerator?: (config: {controllerPath: string}) => Controller | Promise<Controller>
   controllerProcessors?: ControllerProcessor<Controller>[]
-  swagger?: any 
+  swagger?: Record<string, any>
 }
 
 export const loadDirectory = async <Controller extends DefaultController>({
@@ -155,7 +155,7 @@ export const loadDirectory = async <Controller extends DefaultController>({
   });
 
   if(swagger) {
-    const swaggerStatic = {
+    const swaggerStatic: Record<string, any> = {
       ...swagger,
       paths: swaggerPaths,
     }
@@ -168,7 +168,7 @@ export const loadDirectory = async <Controller extends DefaultController>({
         },
       ],
     })
-    var options = {
+    const options = {
       swaggerOptions: {
         url: "/api-docs/swagger.json",
       },
