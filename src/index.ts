@@ -80,13 +80,11 @@ type LoadDirectoryConfig<Controller> = {
 
 export const loadDirectory = async <Controller extends DefaultController>({
   controllerPath = path.join(process.cwd(), 'src', 'controllers'),
-  defaultControllerGenerator = async () => {
-    return {
+  defaultControllerGenerator = () => ({
       renderer: ({res, data }) => {
         res.send(data);
       }
-    } as Controller
-  },
+    } as Controller),
   controllerProcessors = defaultProcessors,
   swagger = {
     openapi: '3.0.0',
