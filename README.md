@@ -100,7 +100,7 @@ This Processor handles the schemas key on controllers. See below for detailed do
 
 ###### processHandlerAndResponder
 
-This Processor handles the handler and renderer key on controllers. See below for detailed documentation.
+This Processor handles the versionBy, versions, handler and renderer key on controllers. See below for detailed documentation.
 
 ###### processSwagger
 
@@ -226,7 +226,7 @@ If the field does not contain the value passed then a 403 error will be returned
 Example custom processor:
 
 ```js
-// in a file called mermission-processor.js
+// in a file called permission-processor.js
 const processor = ({path, controller}) => {
   if (controller.permission) {
     return {
@@ -294,6 +294,41 @@ It is worth noting here that the following keys and documentation relating to th
 #### swagger
 
 The swagger key is where you can specify specific openapi keys for this endpoint. Note that usually this is only necessary for odd usecases. Information from your schemas, the route represented by the file path, and the method from the filename are all captured and added to the playground automatically. Typically you would use this to set a custom set of responses or other information not captured in the standard controller configuration.
+
+#### versionBy
+
+There are a few generally accepted ways to version api endpoints. If you wish to version your endpoints by url then you can ignore this field and simply add directories with the name v1, v2 etc as necessary to update the paths. However for some types of versioning like header or cookie based versioning this is insufficient. To enable arbitrary versioning methodologies you can set the version by field to a function that takes in the request and returns the version string you should use:
+
+```js
+export default {
+  // version based on a header
+  versionBy: (req) => req.get('x-api-version')
+}
+```
+
+Note that the req object here is the express request and this function can be async. This should allow you access to an context you require for proper versioning. It is also reccommended, but not required that you set this on your default controller as your api may become difficult to use if multuiple versioning schemes are used for different paths.
+
+The returned version string should match a key in the versions field which will cause the overrrides in that value to be applied to the controller.
+
+#### versions
+
+See versionBy for an explanation of the reason for this field. You may provide an object mapping version strings to controller overrides so that you can host multiple versions of an endpoint at the same http path.
+
+```js
+export default {
+  versions: {
+    v1: {
+      handler: (req, res) => res.send('I'm in version 1')
+    },
+    v2: {
+      handler: (req, res) => res.send('I'm in version 2')
+    }
+  }
+
+  // if you would like to return a 404 instead when no version matches simply omit the following line
+  handler: (req, res) => res.send('No version was matched so I we fell back to the default')
+}
+```
 
 #### handler
 

@@ -80,28 +80,12 @@ type LoadDirectoryConfig<Controller> = {
 
 export const loadDirectory = async <Controller extends DefaultController>({
   controllerPath = path.join(process.cwd(), 'src', 'controllers'),
-  defaultControllerGenerator = async ({controllerPath: cp}) => {
-    try {
-      // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-assignment
-      const { default: Handlebars } = await eval(`import("handlebars")`);
-      const parsedPath = path.parse(cp)
-      const templatePath = path.join(parsedPath.dir,`${parsedPath.name}.handlebars`)
-      const fileContent = await fs.readFile(templatePath)
-      // eslint-disable-next-line
-      const template = Handlebars.compile(fileContent.toString())
-      return {
-        renderer: ({res, data }) => {
-          // eslint-disable-next-line
-          res.send(template(data));
-        }
-      } as Controller
-    } catch {
-      return {
-        renderer: ({res, data }) => {
-          res.send(data);
-        }
-      } as Controller
-    }
+  defaultControllerGenerator = async () => {
+    return {
+      renderer: ({res, data }) => {
+        res.send(data);
+      }
+    } as Controller
   },
   controllerProcessors = defaultProcessors,
   swagger = {
