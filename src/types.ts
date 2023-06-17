@@ -6,6 +6,8 @@ export type SwaggerProcessor = {
 }
 
 export type HandlerResponderProcessor<HandlerResult = any> = {
+  versionBy?: (req: Request) => Promise<string> | string
+  versions?: Record<string, HandlerResponderProcessor<HandlerResult>>
   handler?: (req: Request, res: Response, next: NextFunction) => HandlerResult
   renderer?: (context: { req: Request, res: Response, path: string, data: HandlerResult}) => any,
 }
